@@ -1,7 +1,7 @@
 import torch
 
 
-def nonlinear(input, gain=1):
+def nonlinear(input, gain=1, type=1):
     """
     mono in mono out
 
@@ -15,4 +15,8 @@ def nonlinear(input, gain=1):
     Returns:
     - output: a tensor of the same shape as the input tensor, with the nonlinear transformation applied
     """
-    return 1 - torch.exp(input * gain)
+    if type == 1:
+        return 1 - torch.exp(input * gain)
+
+    if type == 2:
+        return 1 - torch.exp(input * (input + 1) * gain)
