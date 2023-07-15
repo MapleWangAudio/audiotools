@@ -1,6 +1,6 @@
 # 使用方法
 
-import audiotool
+import audiotools
 
 # 版本号定义
 
@@ -29,7 +29,9 @@ analysis：各种分析绘图
 
 ## 关于matplotlib不显示：
 
-wsl可能没有gui，如果想要gui显示，需要下载gui支持
+wsl可能没有gui，如果想要gui显示，需要下载gui支持，可以尝试：
+
+sudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
 
 这里使用savefig解决
 
