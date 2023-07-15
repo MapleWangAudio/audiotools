@@ -1,5 +1,7 @@
 # 使用方法
 
+放在工程目录下，然后：
+
 import audiotools
 
 # 版本号定义
