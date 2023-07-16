@@ -1,3 +1,3 @@
-from .lib import analysis, data, signal
+from .lib import analysis, data, dsp
 
-__all__ = ["analysis", "data", "signal"]
+__all__ = ["analysis", "data", "dsp"]
