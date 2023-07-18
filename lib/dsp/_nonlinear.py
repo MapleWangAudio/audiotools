@@ -28,34 +28,32 @@ def nonlinear_exp(input, gain=1, type=1):
 
 def nonlinear_normal(
     input,
-    positive_limit_dB=0,
-    negative_limit_dB=0,
-    positive_ratio=-1,
-    negative_ratio=-1,
-    positive_knee_dB=0,
-    negative_knee_dB=0,
+    posi_limit_dB=0,
+    nega_limit_dB=0,
+    posi_ratio=-1,
+    nega_ratio=-1,
+    posi_knee_dB=0,
+    nega_knee_dB=0,
 ):
     """
     mono in mono out
     Args:
     - input: a tensor of any shape
     """
-    positive_limit_up = dB_to_amplitude(positive_limit_dB + positive_knee_dB)
-    positive_limit_down = dB_to_amplitude(positive_limit_dB - positive_knee_dB)
-    positive_limit = dB_to_amplitude(positive_limit_dB)
-    negative_limit_up = dB_to_amplitude(negative_limit_dB + negative_knee_dB)
-    negative_limit_down = dB_to_amplitude(negative_limit_dB - negative_knee_dB)
-    negative_limit = dB_to_amplitude(negative_limit_dB)
+    posi_limit_up = dB_to_amplitude(posi_limit_dB - posi_knee_dB)
+    posi_limit_down = dB_to_amplitude(posi_limit_dB + posi_knee_dB)
+    posi_limit = dB_to_amplitude(posi_limit_dB)
+    nega_limit_up = dB_to_amplitude(nega_limit_dB - nega_knee_dB)
+    nega_limit_down = dB_to_amplitude(nega_limit_dB + nega_knee_dB)
+    nega_limit = dB_to_amplitude(nega_limit_dB)
 
     if input > 0:
-        if input > (positive_limit_up):
-            output = positive_limit + (input - positive_limit) * positive_ratio
-        elif input > (positive_limit_down) and (positive_knee_dB != 0):
-            mix = (input - positive_limit_down) / (
-                positive_limit_up - positive_limit_down
-            )
-            positive_ratio = 1 - (1 - positive_ratio) * mix
-            output = positive_limit + (input - positive_limit) * positive_ratio
+        if input > (posi_limit_up):
+            output = posi_limit + (input - posi_limit) * posi_ratio
+        elif input > (posi_limit_down) and (posi_knee_dB != 0):
+            mix = (input - posi_limit_down) / (posi_limit_up - posi_limit_down)
+            posi_ratio = posi_ratio * mix + 1 - mix
+            output = posi_limit + (input - posi_limit) * posi_ratio
         else:
             output = input
     else:
