@@ -5,13 +5,22 @@ import torch
 
 
 def waveform(
-    waveform, sample_rate=44100, save=True, show=False, name="waveform", end=False
+    waveform,
+    sample_rate=44100,
+    dB=False,
+    save=True,
+    show=False,
+    name="waveform",
+    end=False,
 ):
     """
     Plots the waveform of an audio data.
     """
     if waveform.dim() == 1:
         waveform = waveform.unsqueeze(0)
+    if dB:
+        waveform = torchaudio.transforms.AmplitudeToDB(stype="amplitude")(waveform)
+        waveform = waveform.clip(-60)
     waveform = waveform.numpy()
 
     num_channels, num_frames = waveform.shape
@@ -42,7 +51,7 @@ def specgram(
         waveform = waveform.unsqueeze(0)
 
     specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(waveform)
-    specgram_db = torchaudio.transforms.AmplitudeToDB()(specgram)
+    specgram_db = torchaudio.transforms.AmplitudeToDB(stype="amplitude")(specgram)
 
     num_channels, num_frames = waveform.shape
     time_axis = num_frames / sample_rate
