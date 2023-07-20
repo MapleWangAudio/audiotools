@@ -1,3 +1,3 @@
-from ._nonlinear import nonlinear_exp, nonlinear_normal
+from ._nonlinear import exp, clip
 
-__all__ = ["nonlinear_exp", "nonlinear_normal"]
+__all__ = ["exp", "clip"]
