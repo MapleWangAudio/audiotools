@@ -1,4 +1,4 @@
 from ._filter import fvtool
-from ._audio import waveform, specgram
+from ._audio import plot, feature
 
-__all__ = ["fvtool", "waveform", "specgram"]
+__all__ = ["fvtool", "plot", "feature"]
