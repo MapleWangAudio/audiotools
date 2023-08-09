@@ -1,6 +1,6 @@
 import torch
 import torchaudio
-from ..data import dB_to_amplitude
+from ..dp import dB_to_amplitude
 
 
 def exp(input, gain, upLimit, downLimit, upCurve, downCurve, mode=1):
