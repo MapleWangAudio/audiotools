@@ -2,7 +2,7 @@
 
 放在工程目录下，然后：
 
-import audiotools
+import audiotools as at
 
 # 版本号定义
 
@@ -16,16 +16,16 @@ import audiotools
 
 # 规定
 
-1. 输入输出使用tensor
+1. 函数输入输出使用tensor
 2. audioload使用torchaudio和librosa格式：[通道，数据]。请勿使用scipy的读取
 
 # 各个py文件说明
 
-data：数据处理——修剪音频文件，转换格式之类的
+dp：data processor>修剪音频文件，转换格式等数据操作
 
-signal：信号处理——基础效果器
+dsp：信号处理>基础类型效果器
 
-analysis：各种分析绘图
+analysis：分析绘图&特征提取
 
 # 常见问题
 
