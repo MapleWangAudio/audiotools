@@ -1,3 +1,19 @@
+# 安装
+
+先自行根据自己设备情况安装相对应的pytorch（基于python3.10，pytorch2.0进行的构建）
+
+然后
+
+```
+pip install -r requirements.txt
+```
+
+或者
+
+```
+conda install --yes --file requirements.txt    #这种执行方式，一遇到安装不上就整体停止不会继续下面的包安装
+```
+
 # 使用方法
 
 放在工程目录下，然后：
