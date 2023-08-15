@@ -28,15 +28,3 @@ def gain_computer(
         output = 0
 
     return output
-
-
-def time_coefficient(
-    time, sample_rate, lower_limit=torch.tensor(0.1), upper_limit=torch.tensor(0.9)
-):
-    """
-    time: ms
-    sample_rate: Hz
-    """
-    coeff = torch.log(upper_limit / lower_limit)
-    coeff *= -1
-    return torch.exp(coeff / (time * sample_rate * 0.001))
