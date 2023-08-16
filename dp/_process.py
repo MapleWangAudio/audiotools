@@ -7,6 +7,7 @@ def gate(data, amp_threshold, sustain_threshold, all=False):
     When there are consecutive sustian_threshold elements in the tensor whose absolute value is less than amp_threshold,
     delete these elements. Note that it is deleted, not assigned a value of 0
     only process the beginning and the end of the data
+    all: if True, process the whole data, not only the beginning and the end
     """
     data_copy = data.numpy()
     data_mono = to_mono(data)
