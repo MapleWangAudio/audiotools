@@ -1,4 +1,3 @@
-import torchaudio.transforms as transforms
 import matplotlib.pyplot as plt
 import torchaudio
 import torch
@@ -21,7 +20,7 @@ def waveform(
     if waveform.dim() == 1:
         waveform = waveform.unsqueeze(0)
     if dB:
-        waveform = torchaudio.transforms.AmplitudeToDB(stype="amplitude")(waveform)
+        waveform = torchaudio.functional.amplitude_to_DB(waveform, 20, 0, 0)
         waveform = waveform.clip(-60)
     waveform = waveform.numpy()
 
@@ -53,7 +52,7 @@ def specgram(
         waveform = waveform.unsqueeze(0)
 
     specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(waveform)
-    specgram_db = torchaudio.transforms.AmplitudeToDB(stype="amplitude")(specgram)
+    specgram_db = torchaudio.functional.amplitude_to_DB(specgram, 20, 0, 0)
 
     num_channels, num_frames = waveform.shape
     time_axis = num_frames / sample_rate
