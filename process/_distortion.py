@@ -2,14 +2,32 @@ import torch
 import torchaudio
 
 
-def exp(input, gain, upLimit, downLimit, upCurve, downCurve, mode=1):
+# todo：完善exp
+def nonlinear(
+    input,
+    gain=1,
+    mode=1,
+    upLimit=1,
+    downLimit=1,
+    upCurve=1,
+    downCurve=1,
+    multichannel=False,
+):
     """
-    mono in mono out
+    Exp type nonlinear
+    input: audio amplitude
+    gain: the gain of the nonlinear
+    mode:TODO
+    multichannel: True calculates nonlinear for each channel, False calculates nonlinear for all channels
+    upLimit: the limit of the positive nonlinear
+    downLimit: the limit of the negative nonlinear
+    upCurve: the curve of the positive nonlinear
+    downCurve: the curve of the negative nonlinear
     """
     input *= gain
 
     if mode == 0:
-        output = 1 - torch.exp(input * input * gain) + input
+        output = 1 - torch.exp(input * input) + input
         return output
 
     if mode == 1:
@@ -51,6 +69,7 @@ def exp(input, gain, upLimit, downLimit, upCurve, downCurve, mode=1):
         return output
 
 
+# todo:完善clip
 def clip(
     input,
     posi_limit_dB=0,

@@ -16,7 +16,7 @@ conda install --yes --file requirements.txt    #这种执行方式，一遇到�
 
 # 使用方法
 
-放在工程目录下，然后`import audiotools`
+放在工程目录下，然后 `import audiotools`
 
 # 版本号定义
 
@@ -30,15 +30,13 @@ conda install --yes --file requirements.txt    #这种执行方式，一遇到�
 
 # 规定
 
-1. 输入输出使用tensor
-2. audioload使用torchaudio和librosa格式：[ 通道，数据 ] 。请勿使用scipy的读取
-3. 所有方法都设计为一次处理一整个音频，而非一个点一个点的处理
-4. 所有方法的输入格式为 [ 通道，数据 ]
-5. 所有方法都应该支持多通道
+1. 输入输出使用tensor，格式为[ 通道，数据 ]，推荐使用torchaudio读取
+2. 所有方法都设计为一次处理一整个音频，而非一个点一个点的处理
+3. 所有方法都应该尽量支持多声道处理
 
 # 各个py文件说明
 
-dsp：信号处理方法
+process：各种处理方法
 
 analysis：分析绘图&特征提取
 

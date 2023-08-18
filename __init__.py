@@ -1,3 +1,3 @@
-from . import analysis, dsp
+from . import analysis, process
 
-__all__ = ["analysis", "dsp"]
+__all__ = ["analysis", "process"]

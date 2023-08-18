@@ -6,32 +6,39 @@ from scipy import signal
 
 
 def waveform(
-    waveform,
-    sample_rate=44100,
+    input,
+    sample_rate=48000,
+    show=False,
+    end=False,
+    name="waveform",
     dB=False,
     save=True,
-    show=False,
-    name="waveform",
-    end=False,
 ):
     """
     Plots the waveform of an audio data.
+    input: audio amplitude
+    sample_rate: sample rate (Hz)
+    dB: True plots the waveform in dB, False plots the waveform in amplitude
+    save: True saves the plot as a .svg file, False does not save the plot
+    show: True shows the plot, False does not show the plot
+    name: name of the saved file
+    end: the last plot must be set to True, otherwise the plot will not be displayed
     """
-    if waveform.dim() == 1:
-        waveform = waveform.unsqueeze(0)
+    if input.dim() == 1:
+        input = input.unsqueeze(0)
     if dB:
-        waveform = torchaudio.functional.amplitude_to_DB(waveform, 20, 0, 0)
-        waveform = waveform.clip(-60)
-    waveform = waveform.numpy()
+        input = torchaudio.functional.amplitude_to_DB(input, 20, 0, 0)
+        input = input.clip(-60)
+    input = input.numpy()
 
-    num_channels, num_frames = waveform.shape
+    num_channels, num_frames = input.shape
     time_axis = torch.arange(0, num_frames) / sample_rate
 
     figure, axes = plt.subplots(num_channels, 1)
     if num_channels == 1:
         axes = [axes]
     for c in range(num_channels):
-        axes[c].plot(time_axis, waveform[c], linewidth=1)
+        axes[c].plot(time_axis, input[c], linewidth=1)
         axes[c].grid(True)
         if num_channels > 1:
             axes[c].set_ylabel(f"Ch {c+1}" + " Amplitude")
@@ -46,15 +53,29 @@ def waveform(
 
 
 def specgram(
-    waveform, sample_rate=44100, save=True, show=False, name="specgram", end=False
+    input,
+    sample_rate=48000,
+    show=False,
+    end=False,
+    name="specgram",
+    save=True,
 ):
-    if waveform.dim() == 1:
-        waveform = waveform.unsqueeze(0)
+    """
+    Plots the spectrogram of an audio data.
+    input: audio amplitude
+    sample_rate: sample rate (Hz)
+    save: True saves the plot as a .svg file, False does not save the plot
+    show: True shows the plot, False does not show the plot
+    name: name of the saved file
+    end: the last plot must be set to True, otherwise the plot will not be displayed
+    """
+    if input.dim() == 1:
+        input = input.unsqueeze(0)
 
-    specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(waveform)
+    specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(input)
     specgram_db = torchaudio.functional.amplitude_to_DB(specgram, 20, 0, 0)
 
-    num_channels, num_frames = waveform.shape
+    num_channels, num_frames = input.shape
     time_axis = num_frames / sample_rate
 
     fig, axs = plt.subplots(num_channels, 1)
@@ -82,9 +103,24 @@ def specgram(
         plt.show(block=end)
 
 
-def fvtool(b, a=1, sample_rate=44100, save=True, show=False, name="fvtool", end=False):
+def fvtool(
+    b,
+    a=1,
+    sample_rate=48000,
+    show=False,
+    end=False,
+    name="fvtool",
+    save=True,
+):
     """
-    Emulates the functionality of MATLAB's fvtool function.
+    Emulates the functionality of MATLAB's fvtool function.Calculates and plots the frequency response of a filter.
+    b: numerator coefficients of the filter
+    a: denominator coefficients of the filter
+    sample_rate: sample rate (Hz)
+    save: True saves the plot as a .svg file, False does not save the plot
+    show: True shows the plot, False does not show the plot
+    name: name of the saved file
+    end: the last plot must be set to True, otherwise the plot will not be displayed
     """
     b = b.numpy()
     if isinstance(a, torch.Tensor):
