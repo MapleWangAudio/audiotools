@@ -11,12 +11,12 @@ def gain_computer(
 ):
     """
     Computes the gain of an audio input for compressor.
-    input: audio dB
-    multichannel: True calculates gain for each channel, False calculates gain for all channels
-    threshold: the dB value of the limit
+    input: audio (dB or amplitude)
+    threshold: the value of the limit (dB or amplitude)
     one_over_ratio: the 1/ratio of the limit
-    knee: the dB value of the knee, [0,+∞) (dB)
-    return: gain value (dB)
+    knee: the dB value of the knee, [0,+∞) (dB or amplitude)
+    multichannel: True calculates gain for each channel, False calculates gain for all channels
+    return: gain value (dB or amplitude)
     """
     if input.dim() == 1:
         input = input.unsqueeze(0)

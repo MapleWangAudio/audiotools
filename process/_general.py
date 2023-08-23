@@ -1,30 +1,29 @@
 import torch
 import torchaudio
 import numpy as np
+import math
 
 
 def time_coefficient_computer(
     time,
     sample_rate=48000,
-    lower_limit=torch.tensor(0.1),
-    upper_limit=torch.tensor(0.9),
+    coeff=math.log(9),
 ):
     """
     Compute time coefficient for smooth filter
     time: smooth time (ms)
     sample_rate: sample rate (Hz)
-    lower_limit: Lower limit of controllable range (0,upper_limit)
-    upper_limit: upper limit of controllable range (lower_limit,1]
+    coeff: control coefficient
     return: time coefficient
     """
-    coeff = torch.log(upper_limit / lower_limit)
+    coeff = torch.tensor(coeff)
     coeff *= -1
-    return torch.exp(coeff / (time * sample_rate * 0.001))
+    return torch.exp(coeff / (time * 0.001 * sample_rate))
 
 
 def smooth_filter(
     input,
-    time_coeff=time_coefficient_computer(1),
+    coeff=time_coefficient_computer(1),
     order=1,
 ):
     """
@@ -42,19 +41,17 @@ def smooth_filter(
         output = torch.zeros_like(input)
         for i in range(channel):
             for j in range(1, length):
-                output[i, j] = (
-                    time_coeff * output[i, j - 1] + (1 - time_coeff) * input[i, j]
-                )
+                output[i, j] = coeff * output[i, j - 1] + (1 - coeff) * input[i, j]
 
     if order == 2:
         b = torch.zeros(3)
         a = torch.zeros(3)
-        b[0] = (1 - time_coeff) * (1 - time_coeff)
+        b[0] = (1 - coeff) * (1 - coeff)
         b[1] = 0
         b[2] = 0
         a[0] = 1
-        a[1] = -2 * time_coeff
-        a[2] = time_coeff**2
+        a[1] = -2 * coeff
+        a[2] = coeff**2
 
         output = torchaudio.functional.biquad(input, b[0], b[1], b[2], a[0], a[1], a[2])
 
