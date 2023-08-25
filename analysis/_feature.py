@@ -1,6 +1,6 @@
 import torchaudio
 import torch
-from ..process import time_coefficient_computer, smooth_filter, to_mono
+from ..process import time_coefficient_computer, smooth_filter_1, to_mono
 import math
 
 
@@ -19,7 +19,7 @@ class peak:
         lookback: peak pre window (ms)
         lookahead: peak post window (ms)
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
-        return: peak value (dB)
+        return: peak value
         """
         if input.dim() == 1:
             input = input.unsqueeze(0)
@@ -32,7 +32,6 @@ class peak:
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
-        input = torch.abs(input)
 
         if (pre_pad_length + post_pad_length) == 0:
             peak = input
@@ -54,8 +53,6 @@ class peak:
                         input[i, j : j + pre_pad_length + post_pad_length]
                     )
 
-        peak = torchaudio.functional.amplitude_to_DB(peak, 20, 0, 0)
-
         return peak
 
     def analog_prue(
@@ -73,7 +70,7 @@ class peak:
         release_time: release time (ms)
         mode: 0 is Peak Detectors, 1 is Level Corrected Peak Detectors in branch style, 2 is Smooth Peak Detectors in branch style
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
-        return: peak value (dB)
+        return: peak value
         """
         if input.dim() == 1:
             input = input.unsqueeze(0)
@@ -86,7 +83,6 @@ class peak:
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
-        input = torch.abs(input)
 
         # Peak Detectors
         for i in range(channel):
@@ -94,8 +90,6 @@ class peak:
                 peak[i, j] = release_coeff * peak[i, j - 1] + (1 - attack_coeff) * max(
                     (input[i, j] - peak[i, j - 1]), 0
                 )
-
-        peak = torchaudio.functional.amplitude_to_DB(peak, 20, 0, 0)
 
         return peak
 
@@ -115,7 +109,7 @@ class peak:
         release_time: release time (ms)
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
-        return: peak value (dB)
+        return: peak value
         """
         if input.dim() == 1:
             input = input.unsqueeze(0)
@@ -128,7 +122,6 @@ class peak:
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
-        input = torch.abs(input)
 
         if mode == 0:
             peak_state = torch.zeros_like(input)
@@ -137,7 +130,7 @@ class peak:
                     peak_state[i, j] = max(
                         input[i, j], release_coeff * peak_state[i, j - 1]
                     )
-            peak = smooth_filter(peak_state, attack_coeff, 1)
+            peak = smooth_filter_1(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -150,8 +143,6 @@ class peak:
 
                     else:
                         peak[i, j] = release_coeff * peak[i, j - 1]
-
-        peak = torchaudio.functional.amplitude_to_DB(peak, 20, 0, 0)
 
         return peak
 
@@ -171,7 +162,7 @@ class peak:
         release_time: release time (ms)
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
-        return: peak value (dB)
+        return: peak value
         """
         if input.dim() == 1:
             input = input.unsqueeze(0)
@@ -184,7 +175,6 @@ class peak:
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
-        input = torch.abs(input)
 
         if mode == 0:
             peak_state = torch.zeros_like(input)
@@ -195,7 +185,7 @@ class peak:
                         release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j],
                     )
-            peak = smooth_filter(peak_state, attack_coeff, 1)
+            peak = smooth_filter_1(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -211,8 +201,6 @@ class peak:
                             release_coeff * peak[i, j - 1]
                             + (1 - release_coeff) * input[i, j]
                         )
-
-        peak = torchaudio.functional.amplitude_to_DB(peak, 20, 0, 0)
 
         return peak
 
@@ -232,7 +220,7 @@ class RMS:
         lookback: RMS pre window (ms)
         lookahead: RMS post window (ms)
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
-        return: RMS value (dB)
+        return: RMS value
         """
         if input.dim() == 1:
             input = input.unsqueeze(0)
@@ -265,14 +253,13 @@ class RMS:
                     )
                 )
 
-        RMS = torchaudio.functional.amplitude_to_DB(RMS, 20, 0, 0)
-
         return RMS
 
-    def analog(
+    def analog_prue(
         input,
         sr=48000,
-        time=1,
+        attack_time=1,
+        release_time=1,
         multichannel=False,
     ):
         """
@@ -281,7 +268,7 @@ class RMS:
         sr: sample rate (Hz)
         time: RMS window (ms)
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
-        return: RMS value (dB)
+        return: RMS value
         """
         if input.dim() == 1:
             input = input.unsqueeze(0)
@@ -289,11 +276,128 @@ class RMS:
         if multichannel == False:
             input = to_mono(input)
 
-        coeff = time_coefficient_computer(time, sr)
+        attack_coeff = time_coefficient_computer(attack_time, sr)
+        release_coeff = time_coefficient_computer(release_time, sr)
+        input = torch.square(input)
 
-        RMS = smooth_filter(input**2, coeff, 1)
+        RMS = smooth_filter_1(input, attack_coeff, release_coeff)
         RMS = torch.sqrt(RMS)
 
-        RMS = torchaudio.functional.amplitude_to_DB(RMS, 20, 0, 0)
+        return RMS
+
+    def analog_level_corrected(
+        input,
+        sr=48000,
+        attack_time=1,
+        release_time=1,
+        mode=1,
+        multichannel=False,
+    ):
+        """
+        Computes the root mean square (RMS) of an audio input. Analog Type
+        input: audio amplitude
+        sr: sample rate (Hz)
+        attack_time: attack time (ms)
+        release_time: release time (ms)
+        mode: 0 is decoupled style, 1 is branch style
+        multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
+        return: RMS value
+        """
+        if input.dim() == 1:
+            input = input.unsqueeze(0)
+
+        if multichannel == False:
+            input = to_mono(input)
+
+        attack_coeff = time_coefficient_computer(attack_time, sr)
+        release_coeff = time_coefficient_computer(release_time, sr)
+
+        channel, input_length = input.shape
+        input = torch.square(input)
+        RMS = torch.zeros_like(input)
+
+        if mode == 0:
+            RMS_state = torch.zeros_like(input)
+            for i in range(channel):
+                for j in range(1, input_length):
+                    RMS_state[i, j] = (
+                        input[i, j] + release_coeff * RMS_state[i, j - 1]
+                    ) / 2
+            RMS = smooth_filter_1(RMS_state, attack_coeff, attack_coeff)
+
+        if mode == 1:
+            for i in range(channel):
+                for j in range(1, input_length):
+                    if input[i, j] > RMS[i, j - 1]:
+                        RMS[i, j] = (
+                            attack_coeff * RMS[i, j - 1]
+                            + (1 - attack_coeff) * input[i, j]
+                        )
+
+                    else:
+                        RMS[i, j] = release_coeff * RMS[i, j - 1]
+
+        RMS = torch.sqrt(RMS)
+
+        return RMS
+
+    def analog_smooth(
+        input,
+        sr=48000,
+        attack_time=1,
+        release_time=1,
+        mode=1,
+        multichannel=False,
+    ):
+        """
+        Computes the RMS value of an audio input. Analog Type.
+        input: audio amplitude
+        sr: sample rate (Hz)
+        attack_time: attack time (ms)
+        release_time: release time (ms)
+        mode: 0 is decoupled style, 1 is branch style
+        multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
+        return: RMS value
+        """
+        if input.dim() == 1:
+            input = input.unsqueeze(0)
+
+        if multichannel == False:
+            input = to_mono(input)
+
+        attack_coeff = time_coefficient_computer(attack_time, sr)
+        release_coeff = time_coefficient_computer(release_time, sr)
+
+        channel, input_length = input.shape
+        input = torch.square(input)
+        RMS = torch.zeros_like(input)
+
+        if mode == 0:
+            peak_state = torch.zeros_like(input)
+            for i in range(channel):
+                for j in range(1, input_length):
+                    peak_state[i, j] = (
+                        input[i, j]
+                        + release_coeff * peak_state[i, j - 1]
+                        + (1 - release_coeff) * input[i, j]
+                    ) / 3
+            RMS = smooth_filter_1(peak_state, attack_coeff, attack_coeff)
+
+        if mode == 1:
+            for i in range(channel):
+                for j in range(1, input_length):
+                    if input[i, j] > RMS[i, j - 1]:
+                        RMS[i, j] = (
+                            attack_coeff * RMS[i, j - 1]
+                            + (1 - attack_coeff) * input[i, j]
+                        )
+
+                    else:
+                        RMS[i, j] = (
+                            release_coeff * RMS[i, j - 1]
+                            + (1 - release_coeff) * input[i, j]
+                        )
+
+        RMS = torch.sqrt(RMS)
 
         return RMS
