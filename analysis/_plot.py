@@ -10,8 +10,8 @@ def waveform(
     sample_rate=48000,
     show=False,
     end=False,
-    name="waveform",
     dB=False,
+    name="waveform",
     save=True,
 ):
     """

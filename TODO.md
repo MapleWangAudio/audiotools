@@ -5,3 +5,4 @@
 3. [ ] distortion.py完善
 4. [ ] to_mono可进行代码优化
 5. [ ] delete可进行代码优化
+6. [ ] 方程转查表
