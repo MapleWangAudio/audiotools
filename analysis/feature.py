@@ -1,7 +1,5 @@
-import torchaudio
 import torch
-from ..process import time_coefficient_computer, smooth_filter_1, to_mono
-import math
+from .. import process
 
 
 class peak:
@@ -10,6 +8,7 @@ class peak:
         sr=48000,
         lookback=1,
         lookahead=1,
+        is_dB=False,
         multichannel=False,
     ):
         """
@@ -18,6 +17,7 @@ class peak:
         sr: sample rate (Hz)
         lookback: peak pre window (ms)
         lookahead: peak post window (ms)
+        is_dB: True calculates peak value in dB, False calculates peak value in amplitude
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
@@ -25,7 +25,12 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
+
+        if is_dB == True:
+            pad_value = -90
+        else:
+            pad_value = 0
 
         pre_pad_length = int(lookback * 0.001 * sr)
         post_pad_length = int(lookahead * 0.001 * sr)
@@ -44,7 +49,7 @@ class peak:
                     post_pad_length,
                 ),
                 "constant",
-                0,
+                pad_value,
             )
 
             for i in range(channel):
@@ -76,10 +81,10 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
 
-        attack_coeff = time_coefficient_computer(attack_time, sr)
-        release_coeff = time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(attack_time, sr)
+        release_coeff = process.time_coefficient_computer(release_time, sr)
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
@@ -115,10 +120,10 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
 
-        attack_coeff = time_coefficient_computer(attack_time, sr)
-        release_coeff = time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(attack_time, sr)
+        release_coeff = process.time_coefficient_computer(release_time, sr)
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
@@ -130,7 +135,7 @@ class peak:
                     peak_state[i, j] = max(
                         input[i, j], release_coeff * peak_state[i, j - 1]
                     )
-            peak = smooth_filter_1(peak_state, attack_coeff, attack_coeff)
+            peak = process.smooth_filter_1(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -168,10 +173,10 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
 
-        attack_coeff = time_coefficient_computer(attack_time, sr)
-        release_coeff = time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(attack_time, sr)
+        release_coeff = process.time_coefficient_computer(release_time, sr)
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
@@ -185,7 +190,7 @@ class peak:
                         release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j],
                     )
-            peak = smooth_filter_1(peak_state, attack_coeff, attack_coeff)
+            peak = process.smooth_filter_1(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -211,6 +216,7 @@ class RMS:
         sr=48000,
         lookback=1,
         lookahead=1,
+        is_dB=False,
         multichannel=False,
     ):
         """
@@ -219,6 +225,7 @@ class RMS:
         sr: sample rate (Hz)
         lookback: RMS pre window (ms)
         lookahead: RMS post window (ms)
+        is_dB: True calculates RMS value in dB, False calculates RMS value in amplitude
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
@@ -226,7 +233,12 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
+
+        if is_dB == True:
+            pad_value = -90
+        else:
+            pad_value = 0
 
         pre_pad_length = int(lookback * 0.001 * sr)
         post_pad_length = int(lookahead * 0.001 * sr)
@@ -242,7 +254,7 @@ class RMS:
                 post_pad_length,
             ),
             "constant",
-            0,
+            pad_value,
         )
 
         for i in range(channel):
@@ -274,13 +286,13 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
 
-        attack_coeff = time_coefficient_computer(attack_time, sr)
-        release_coeff = time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(attack_time, sr)
+        release_coeff = process.time_coefficient_computer(release_time, sr)
         input = torch.square(input)
 
-        RMS = smooth_filter_1(input, attack_coeff, release_coeff)
+        RMS = process.smooth_filter_1(input, attack_coeff, release_coeff)
         RMS = torch.sqrt(RMS)
 
         return RMS
@@ -307,10 +319,10 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
 
-        attack_coeff = time_coefficient_computer(attack_time, sr)
-        release_coeff = time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(attack_time, sr)
+        release_coeff = process.time_coefficient_computer(release_time, sr)
 
         channel, input_length = input.shape
         input = torch.square(input)
@@ -323,7 +335,7 @@ class RMS:
                     RMS_state[i, j] = (
                         input[i, j] + release_coeff * RMS_state[i, j - 1]
                     ) / 2
-            RMS = smooth_filter_1(RMS_state, attack_coeff, attack_coeff)
+            RMS = process.smooth_filter_1(RMS_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -363,10 +375,10 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = to_mono(input)
+            input = process.to_mono(input)
 
-        attack_coeff = time_coefficient_computer(attack_time, sr)
-        release_coeff = time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(attack_time, sr)
+        release_coeff = process.time_coefficient_computer(release_time, sr)
 
         channel, input_length = input.shape
         input = torch.square(input)
@@ -381,7 +393,7 @@ class RMS:
                         + release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j]
                     ) / 3
-            RMS = smooth_filter_1(peak_state, attack_coeff, attack_coeff)
+            RMS = process.smooth_filter_1(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):

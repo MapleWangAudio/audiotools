@@ -2,6 +2,29 @@ import torch
 import torchaudio
 import numpy as np
 import math
+import torchaudio.functional as F
+
+
+def generate_signal(freq, sr, amplitude, length, mode=0):
+    """
+    Generate a signal
+    freq: frequency (Hz)
+    sr: sample rate (Hz)
+    amplitude: amplitude
+    length: length (s)
+    mode: 0: sine wave, 1: square wave, 2: triangle wave
+    return: signal
+    """
+    t = torch.linspace(0, length, int(sr * length))
+    if mode == 0:
+        signal = amplitude * torch.sin(2 * torch.pi * freq * t)
+    if mode == 1:
+        signal = amplitude * torch.sign(torch.sin(2 * torch.pi * freq * t))
+    if mode == 2:
+        signal = amplitude * (2 / torch.pi) * torch.atan(torch.tan(torch.pi * freq * t))
+
+    signal = signal.unsqueeze(0)
+    return signal
 
 
 def time_coefficient_computer(
