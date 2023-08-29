@@ -1,4 +1,5 @@
 import torch
+import math
 from .. import process
 
 
@@ -65,6 +66,10 @@ class peak:
         sr=48000,
         attack_time=1,
         release_time=1,
+        attack_range_low=0.1,
+        attack_range_high=0.9,
+        release_range_low=0.1,
+        release_range_high=0.9,
         multichannel=False,
     ):
         """
@@ -83,8 +88,12 @@ class peak:
         if multichannel == False:
             input = process.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(attack_time, sr)
-        release_coeff = process.time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(
+            attack_time, sr, attack_range_low, attack_range_high
+        )
+        release_coeff = process.time_coefficient_computer(
+            release_time, sr, release_range_low, release_range_high
+        )
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
@@ -103,6 +112,10 @@ class peak:
         sr=48000,
         attack_time=1,
         release_time=1,
+        attack_range_low=0.1,
+        attack_range_high=0.9,
+        release_range_low=0.1,
+        release_range_high=0.9,
         mode=1,
         multichannel=False,
     ):
@@ -122,8 +135,12 @@ class peak:
         if multichannel == False:
             input = process.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(attack_time, sr)
-        release_coeff = process.time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(
+            attack_time, sr, attack_range_low, attack_range_high
+        )
+        release_coeff = process.time_coefficient_computer(
+            release_time, sr, release_range_low, release_range_high
+        )
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
@@ -156,6 +173,10 @@ class peak:
         sr=48000,
         attack_time=1,
         release_time=1,
+        attack_range_low=0.1,
+        attack_range_high=0.9,
+        release_range_low=0.1,
+        release_range_high=0.9,
         mode=1,
         multichannel=False,
     ):
@@ -175,8 +196,12 @@ class peak:
         if multichannel == False:
             input = process.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(attack_time, sr)
-        release_coeff = process.time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(
+            attack_time, sr, attack_range_low, attack_range_high
+        )
+        release_coeff = process.time_coefficient_computer(
+            release_time, sr, release_range_low, release_range_high
+        )
 
         channel, input_length = input.shape
         peak = torch.zeros_like(input)
@@ -272,6 +297,10 @@ class RMS:
         sr=48000,
         attack_time=1,
         release_time=1,
+        attack_range_low=0.1,
+        attack_range_high=0.9,
+        release_range_low=0.1,
+        release_range_high=0.9,
         multichannel=False,
     ):
         """
@@ -288,8 +317,12 @@ class RMS:
         if multichannel == False:
             input = process.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(attack_time, sr)
-        release_coeff = process.time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(
+            attack_time, sr, attack_range_low, attack_range_high
+        )
+        release_coeff = process.time_coefficient_computer(
+            release_time, sr, release_range_low, release_range_high
+        )
         input = torch.square(input)
 
         RMS = process.smooth_filter_1(input, attack_coeff, release_coeff)
@@ -302,6 +335,10 @@ class RMS:
         sr=48000,
         attack_time=1,
         release_time=1,
+        attack_range_low=0.1,
+        attack_range_high=0.9,
+        release_range_low=0.1,
+        release_range_high=0.9,
         mode=1,
         multichannel=False,
     ):
@@ -321,8 +358,12 @@ class RMS:
         if multichannel == False:
             input = process.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(attack_time, sr)
-        release_coeff = process.time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(
+            attack_time, sr, attack_range_low, attack_range_high
+        )
+        release_coeff = process.time_coefficient_computer(
+            release_time, sr, release_range_low, release_range_high
+        )
 
         channel, input_length = input.shape
         input = torch.square(input)
@@ -358,6 +399,10 @@ class RMS:
         sr=48000,
         attack_time=1,
         release_time=1,
+        attack_range_low=0.1,
+        attack_range_high=0.9,
+        release_range_low=0.1,
+        release_range_high=0.9,
         mode=1,
         multichannel=False,
     ):
@@ -377,8 +422,12 @@ class RMS:
         if multichannel == False:
             input = process.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(attack_time, sr)
-        release_coeff = process.time_coefficient_computer(release_time, sr)
+        attack_coeff = process.time_coefficient_computer(
+            attack_time, sr, attack_range_low, attack_range_high
+        )
+        release_coeff = process.time_coefficient_computer(
+            release_time, sr, release_range_low, release_range_high
+        )
 
         channel, input_length = input.shape
         input = torch.square(input)

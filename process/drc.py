@@ -84,6 +84,22 @@ def timetest_signal(
     return signal
 
 
+def time_extract(test, result, sr):
+    result = torch.abs(result[0, :])
+    test = torch.abs(test[0, :])
+
+    result = analysis.peak.digital(result, sr, 20, 0)
+    test = analysis.peak.digital(test, sr, 20, 0)
+
+    gain = result / test
+
+    gain[0, 0:100] = 1
+    gain = torch.where(torch.isnan(gain), torch.tensor(3.1623e-05), gain)
+
+    gain = F.amplitude_to_DB(gain, 20, 0, 0, 90)
+    return gain
+
+
 def ratiotest_signal(freq=1000, sr=96000):
     """
     Generate a signal for ratio test
@@ -114,10 +130,10 @@ def ratio_extract(ratiotest, sr):
     output = torch.zeros(91)
     ratiotest = ratiotest[0, :]
 
-    # 先选取每个阶段的最后0.2s，因为前面没意义，同时为peak计算节省运算量
+    # 先选取每个阶段的最后0.15s，因为前面没意义，同时为peak计算节省运算量
     ratiotest_stage = torch.zeros(1)
     for i in range(91):
-        stage = ratiotest[int(i * sr * 5 + sr * 4.8) : (i + 1) * sr * 5]
+        stage = ratiotest[int(i * sr * 5 + sr * 4.85) : (i + 1) * sr * 5]
         ratiotest_stage = torch.cat((ratiotest_stage, stage), 0)
     ratiotest = ratiotest_stage[1:]
 
@@ -125,8 +141,8 @@ def ratio_extract(ratiotest, sr):
     ratiotest = ratiotest[0, :]
 
     for i in range(91):
-        # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前100ms
-        stage = ratiotest[int(i * sr * 0.2 + sr * 0.1) : int((i + 1) * sr * 0.2)]
+        # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
+        stage = ratiotest[int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)]
         stage = min(stage)
         output[i] = stage
     output = output.unsqueeze(0)

@@ -30,18 +30,20 @@ def generate_signal(freq, sr, amplitude, length, mode=0):
 def time_coefficient_computer(
     time,
     sample_rate=48000,
-    coeff=math.log(9),
+    range_low=0.1,
+    range_high=0.9,
 ):
     """
     Compute time coefficient for smooth filter
     time: smooth time (ms)
     sample_rate: sample rate (Hz)
-    coeff: control coefficient
+    shape_control: control coefficient
     return: time coefficient
     """
-    coeff = torch.tensor(coeff)
-    coeff *= -1
-    return torch.exp(coeff / (time * 0.001 * sample_rate))
+    shape_control = math.log((1 - range_low) / (1 - range_high))
+    shape_control = torch.tensor(shape_control)
+    shape_control *= -1
+    return torch.exp(shape_control / (time * 0.001 * sample_rate))
 
 
 def smooth_filter_1(
