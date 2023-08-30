@@ -22,6 +22,8 @@ class peak:
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -78,10 +80,15 @@ class peak:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
-        mode: 0 is Peak Detectors, 1 is Level Corrected Peak Detectors in branch style, 2 is Smooth Peak Detectors in branch style
+        attack_range_low: attack control range low (0,1]
+        attack_range_high: attack control range high (0,1]
+        release_range_low: release control range low (0,1]
+        release_range_high: release control range high (0,1]
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -125,10 +132,16 @@ class peak:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
+        attack_range_low: attack control range low (0,1]
+        attack_range_high: attack control range high (0,1]
+        release_range_low: release control range low (0,1]
+        release_range_high: release control range high (0,1]
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -152,7 +165,7 @@ class peak:
                     peak_state[i, j] = max(
                         input[i, j], release_coeff * peak_state[i, j - 1]
                     )
-            peak = process.smooth_filter_1(peak_state, attack_coeff, attack_coeff)
+            peak = process.smooth_filter(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -186,10 +199,16 @@ class peak:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
+        attack_range_low: attack control range low (0,1]
+        attack_range_high: attack control range high (0,1]
+        release_range_low: release control range low (0,1]
+        release_range_high: release control range high (0,1]
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -215,7 +234,7 @@ class peak:
                         release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j],
                     )
-            peak = process.smooth_filter_1(peak_state, attack_coeff, attack_coeff)
+            peak = process.smooth_filter(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -254,6 +273,8 @@ class RMS:
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -307,10 +328,17 @@ class RMS:
         Computes the root mean square (RMS) of an audio input. Analog Type
         input: audio amplitude
         sr: sample rate (Hz)
-        time: RMS window (ms)
+        attack_time: attack time (ms)
+        release_time: release time (ms)
+        attack_range_low: attack control range low (0,1]
+        attack_range_high: attack control range high (0,1]
+        release_range_low: release control range low (0,1]
+        release_range_high: release control range high (0,1]
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -325,7 +353,7 @@ class RMS:
         )
         input = torch.square(input)
 
-        RMS = process.smooth_filter_1(input, attack_coeff, release_coeff)
+        RMS = process.smooth_filter(input, attack_coeff, release_coeff)
         RMS = torch.sqrt(RMS)
 
         return RMS
@@ -348,10 +376,16 @@ class RMS:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
+        attack_range_low: attack control range low (0,1]
+        attack_range_high: attack control range high (0,1]
+        release_range_low: release control range low (0,1]
+        release_range_high: release control range high (0,1]
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
         return: RMS value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -376,7 +410,7 @@ class RMS:
                     RMS_state[i, j] = (
                         input[i, j] + release_coeff * RMS_state[i, j - 1]
                     ) / 2
-            RMS = process.smooth_filter_1(RMS_state, attack_coeff, attack_coeff)
+            RMS = process.smooth_filter(RMS_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -412,10 +446,16 @@ class RMS:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
+        attack_range_low: attack control range low (0,1]
+        attack_range_high: attack control range high (0,1]
+        release_range_low: release control range low (0,1]
+        release_range_high: release control range high (0,1]
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
         return: RMS value
         """
+        if input.dim() == 0:
+            input = input.unsqueeze(0)
         if input.dim() == 1:
             input = input.unsqueeze(0)
 
@@ -442,7 +482,7 @@ class RMS:
                         + release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j]
                     ) / 3
-            RMS = process.smooth_filter_1(peak_state, attack_coeff, attack_coeff)
+            RMS = process.smooth_filter(peak_state, attack_coeff, attack_coeff)
 
         if mode == 1:
             for i in range(channel):

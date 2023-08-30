@@ -37,7 +37,8 @@ def time_coefficient_computer(
     Compute time coefficient for smooth filter
     time: smooth time (ms)
     sample_rate: sample rate (Hz)
-    shape_control: control coefficient
+    range_low: lower limit of time coefficient control range
+    range_high: upper limit of time coefficient control range
     return: time coefficient
     """
     shape_control = math.log((1 - range_low) / (1 - range_high))
@@ -46,55 +47,45 @@ def time_coefficient_computer(
     return torch.exp(shape_control / (time * 0.001 * sample_rate))
 
 
-def smooth_filter_1(
+def smooth_filter(
     input,
     attack_coeff=time_coefficient_computer(1),
     release_coeff=time_coefficient_computer(1),
+    order=1,
 ):
     """
     Filter to smooth something
     input: audio amplitude
     attack_coeff: time coefficient
     release_coeff: time coefficient
+    order: 1: first order filter, 2: second order filter
     return: smoothed input
     """
+    if input.dim() == 0:
+        input = input.unsqueeze(0)
     if input.dim() == 1:
         input = input.unsqueeze(0)
 
-    channel, length = input.shape
-    output = torch.zeros_like(input)
-    for i in range(channel):
-        for j in range(1, length):
-            output[i, j] = (
-                release_coeff * output[i, j - 1] + (1 - attack_coeff) * input[i, j]
-            )
+    if order == 1:
+        channel, length = input.shape
+        output = torch.zeros_like(input)
+        for i in range(channel):
+            for j in range(1, length):
+                output[i, j] = (
+                    release_coeff * output[i, j - 1] + (1 - attack_coeff) * input[i, j]
+                )
 
-    return output
+    if order == 2:
+        b = torch.zeros(3)
+        a = torch.zeros(3)
+        b[0] = (1 - attack_coeff) * (1 - attack_coeff)
+        b[1] = 0
+        b[2] = 0
+        a[0] = 1
+        a[1] = -2 * release_coeff
+        a[2] = release_coeff**2
 
-
-def smooth_filter_2(
-    input,
-    coeff=time_coefficient_computer(1),
-):
-    """
-    Filter to smooth something
-    input: audio amplitude
-    coeff: time coefficient
-    return: smoothed input
-    """
-    if input.dim() == 1:
-        input = input.unsqueeze(0)
-
-    b = torch.zeros(3)
-    a = torch.zeros(3)
-    b[0] = (1 - coeff) * (1 - coeff)
-    b[1] = 0
-    b[2] = 0
-    a[0] = 1
-    a[1] = -2 * coeff
-    a[2] = coeff**2
-
-    output = torchaudio.functional.biquad(input, b[0], b[1], b[2], a[0], a[1], a[2])
+        output = torchaudio.functional.biquad(input, b[0], b[1], b[2], a[0], a[1], a[2])
 
     return output
 

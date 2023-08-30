@@ -8,8 +8,7 @@ from .drc import (
 )
 from .general import (
     time_coefficient_computer,
-    smooth_filter_1,
-    smooth_filter_2,
+    smooth_filter,
     to_mono,
     delete,
 )
@@ -23,8 +22,7 @@ __all__ = [
     "ratiotest_signal",
     "ratio_extract",
     "time_coefficient_computer",
-    "smooth_filter_1",
-    "smooth_filter_2",
+    "smooth_filter",
     "to_mono",
     "delete",
 ]

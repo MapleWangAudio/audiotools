@@ -24,6 +24,8 @@ def waveform(
     name: name of the saved file
     end: the last plot must be set to True, otherwise the plot will not be displayed
     """
+    if input.dim() == 0:
+        input = input.unsqueeze(0)
     if input.dim() == 1:
         input = input.unsqueeze(0)
     if dB:
@@ -68,6 +70,8 @@ def specgram(
     name: name of the saved file
     end: the last plot must be set to True, otherwise the plot will not be displayed
     """
+    if input.dim() == 0:
+        input = input.unsqueeze(0)
     if input.dim() == 1:
         input = input.unsqueeze(0)
 

@@ -20,6 +20,8 @@ def gain_computer(
     multichannel: True calculates gain for each channel, False calculates gain for all channels
     return: gain value (dB or amplitude)
     """
+    if input.dim() == 0:
+        input = input.unsqueeze(0)
     if input.dim() == 1:
         input = input.unsqueeze(0)
 
