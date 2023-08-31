@@ -165,7 +165,7 @@ class peak:
                     peak_state[i, j] = max(
                         input[i, j], release_coeff * peak_state[i, j - 1]
                     )
-            peak = process.smooth_filter(peak_state, attack_coeff, attack_coeff)
+            peak = process.smooth_filter(peak_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -234,7 +234,7 @@ class peak:
                         release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j],
                     )
-            peak = process.smooth_filter(peak_state, attack_coeff, attack_coeff)
+            peak = process.smooth_filter(peak_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -316,20 +316,16 @@ class RMS:
     def analog_prue(
         input,
         sr=48000,
-        attack_time=1,
-        release_time=1,
-        attack_range_low=0.1,
-        attack_range_high=0.9,
-        release_range_low=0.1,
-        release_range_high=0.9,
+        time=1,
+        range_low=0.1,
+        range_high=0.9,
         multichannel=False,
     ):
         """
         Computes the root mean square (RMS) of an audio input. Analog Type
         input: audio amplitude
         sr: sample rate (Hz)
-        attack_time: attack time (ms)
-        release_time: release time (ms)
+        time: attack time (ms)
         attack_range_low: attack control range low (0,1]
         attack_range_high: attack control range high (0,1]
         release_range_low: release control range low (0,1]
@@ -345,15 +341,11 @@ class RMS:
         if multichannel == False:
             input = process.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(
-            attack_time, sr, attack_range_low, attack_range_high
-        )
-        release_coeff = process.time_coefficient_computer(
-            release_time, sr, release_range_low, release_range_high
-        )
+        coeff = process.time_coefficient_computer(time, sr, range_low, range_high)
+
         input = torch.square(input)
 
-        RMS = process.smooth_filter(input, attack_coeff, release_coeff)
+        RMS = process.smooth_filter(input, coeff)
         RMS = torch.sqrt(RMS)
 
         return RMS
@@ -410,7 +402,7 @@ class RMS:
                     RMS_state[i, j] = (
                         input[i, j] + release_coeff * RMS_state[i, j - 1]
                     ) / 2
-            RMS = process.smooth_filter(RMS_state, attack_coeff, attack_coeff)
+            RMS = process.smooth_filter(RMS_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -482,7 +474,7 @@ class RMS:
                         + release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j]
                     ) / 3
-            RMS = process.smooth_filter(peak_state, attack_coeff, attack_coeff)
+            RMS = process.smooth_filter(peak_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):

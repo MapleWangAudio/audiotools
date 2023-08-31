@@ -49,15 +49,13 @@ def time_coefficient_computer(
 
 def smooth_filter(
     input,
-    attack_coeff=time_coefficient_computer(1),
-    release_coeff=time_coefficient_computer(1),
+    coeff=time_coefficient_computer(1),
     order=1,
 ):
     """
     Filter to smooth something
     input: audio amplitude
-    attack_coeff: time coefficient
-    release_coeff: time coefficient
+    coeff: time coefficient
     order: 1: first order filter, 2: second order filter
     return: smoothed input
     """
@@ -71,19 +69,17 @@ def smooth_filter(
         output = torch.zeros_like(input)
         for i in range(channel):
             for j in range(1, length):
-                output[i, j] = (
-                    release_coeff * output[i, j - 1] + (1 - attack_coeff) * input[i, j]
-                )
+                output[i, j] = coeff * output[i, j - 1] + (1 - coeff) * input[i, j]
 
     if order == 2:
         b = torch.zeros(3)
         a = torch.zeros(3)
-        b[0] = (1 - attack_coeff) * (1 - attack_coeff)
+        b[0] = (1 - coeff) * (1 - coeff)
         b[1] = 0
         b[2] = 0
         a[0] = 1
-        a[1] = -2 * release_coeff
-        a[2] = release_coeff**2
+        a[1] = -2 * coeff
+        a[2] = coeff**2
 
         output = torchaudio.functional.biquad(input, b[0], b[1], b[2], a[0], a[1], a[2])
 
