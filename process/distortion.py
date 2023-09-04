@@ -1,5 +1,6 @@
 import torch
 import torchaudio
+import torchaudio.functional as F
 
 
 # todo：完善exp
@@ -96,14 +97,14 @@ def clip(
                 output = (
                     posi_limit_dB + (input_dB - posi_limit_dB) * posi_one_over_ratio
                 )
-                output = torchaudio.functional.DB_to_amplitude(output, 1, 0.5)
+                output = F.DB_to_amplitude(output, 1, 0.5)
             elif input_dB > (posi_limit_dB - posi_knee_dB / 2) and (posi_knee_dB != 0):
                 output = input_dB + (
                     (posi_one_over_ratio - 1)
                     * (input_dB - posi_limit_dB + posi_knee_dB / 2)
                     * (input_dB - posi_limit_dB + posi_knee_dB / 2)
                 ) / (2 * posi_knee_dB)
-                output = torchaudio.functional.DB_to_amplitude(output, 1, 0.5)
+                output = F.DB_to_amplitude(output, 1, 0.5)
             else:
                 output = input
         else:
@@ -113,14 +114,14 @@ def clip(
                 output = (
                     nega_limit_dB + (input_dB - nega_limit_dB) * nega_one_over_ratio
                 )
-                output = torchaudio.functional.DB_to_amplitude(output, 1, 0.5)
+                output = F.DB_to_amplitude(output, 1, 0.5)
             elif input_dB > (nega_limit_dB - nega_knee_dB / 2) and (nega_knee_dB != 0):
                 output = input_dB + (
                     (nega_one_over_ratio - 1)
                     * (input_dB - nega_limit_dB + nega_knee_dB / 2)
                     * (input_dB - nega_limit_dB + nega_knee_dB / 2)
                 ) / (2 * nega_knee_dB)
-                output = torchaudio.functional.DB_to_amplitude(output, 1, 0.5)
+                output = F.DB_to_amplitude(output, 1, 0.5)
             else:
                 output = input
 
@@ -129,26 +130,18 @@ def clip(
         return output
 
     if mode == 1:
-        posi_limit_up = torchaudio.functional.DB_to_amplitude(
-            posi_limit_dB - posi_knee_dB, 1, 0.5
-        )
-        posi_limit_down = torchaudio.functional.DB_to_amplitude(
-            posi_limit_dB + posi_knee_dB, 1, 0.5
-        )
-        posi_limit = torchaudio.functional.DB_to_amplitude(posi_limit_dB, 1, 0.5)
+        posi_limit_up = F.DB_to_amplitude(posi_limit_dB - posi_knee_dB, 1, 0.5)
+        posi_limit_down = F.DB_to_amplitude(posi_limit_dB + posi_knee_dB, 1, 0.5)
+        posi_limit = F.DB_to_amplitude(posi_limit_dB, 1, 0.5)
         if posi_knee_dB != 0:
             posi_one_over_ratio_knee = (
                 posi_limit
                 - posi_limit_down
                 + (posi_limit_up - posi_limit) * posi_one_over_ratio
             ) / (posi_limit_up - posi_limit_down)
-        nega_limit_up = torchaudio.functional.DB_to_amplitude(
-            nega_limit_dB - nega_knee_dB, 1, 0.5
-        )
-        nega_limit_down = torchaudio.functional.DB_to_amplitude(
-            nega_limit_dB + nega_knee_dB, 1, 0.5
-        )
-        nega_limit = torchaudio.functional.DB_to_amplitude(nega_limit_dB, 1, 0.5)
+        nega_limit_up = F.DB_to_amplitude(nega_limit_dB - nega_knee_dB, 1, 0.5)
+        nega_limit_down = F.DB_to_amplitude(nega_limit_dB + nega_knee_dB, 1, 0.5)
+        nega_limit = F.DB_to_amplitude(nega_limit_dB, 1, 0.5)
         if nega_knee_dB != 0:
             nega_one_over_ratio_knee = (
                 nega_limit

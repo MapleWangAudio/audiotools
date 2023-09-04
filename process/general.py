@@ -1,8 +1,7 @@
 import torch
-import torchaudio
+import torchaudio.functional as F
 import numpy as np
 import math
-import torchaudio.functional as F
 
 
 def generate_signal(freq, sr, amplitude, length, mode=0):
@@ -37,8 +36,8 @@ def time_coefficient_computer(
     Compute time coefficient for smooth filter
     time: smooth time (ms)
     sample_rate: sample rate (Hz)
-    range_low: lower limit of time coefficient control range
-    range_high: upper limit of time coefficient control range
+    range_low: lower limit of time coefficient control range (0,1)
+    range_high: upper limit of time coefficient control range (0,1)
     return: time coefficient
     """
     shape_control = math.log((1 - range_low) / (1 - range_high))
@@ -81,7 +80,7 @@ def smooth_filter(
         a[1] = -2 * coeff
         a[2] = coeff**2
 
-        output = torchaudio.functional.biquad(input, b[0], b[1], b[2], a[0], a[1], a[2])
+        output = F.biquad(input, b[0], b[1], b[2], a[0], a[1], a[2])
 
     return output
 

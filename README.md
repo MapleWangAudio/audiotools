@@ -1,6 +1,6 @@
 # 安装
 
-先自行根据自己设备情况安装相对应的pytorch（基于python3.10，pytorch2.0进行的构建）
+先自行根据自己设备情况安装相对应的pytorch（本项目基于python3.10，pytorch2.0进行的构建，其他版本请自行检查兼容性）
 
 然后
 
@@ -16,7 +16,12 @@ conda install --yes --file requirements.txt    #这种执行方式，一遇到�
 
 # 使用方法
 
-放在工程目录下，然后 `import audiotools`
+放在工程目录下，然后
+
+```
+from audiotools import analysis as A
+from audiotools import process as P
+```
 
 # 版本号定义
 

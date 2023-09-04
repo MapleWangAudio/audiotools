@@ -1,6 +1,6 @@
 import torch
-import math
-from .. import process
+import torchaudio.functional as F
+from .. import process as P
 
 
 class peak:
@@ -18,7 +18,7 @@ class peak:
         sr: sample rate (Hz)
         lookback: peak pre window (ms)
         lookahead: peak post window (ms)
-        is_dB: True calculates peak value in dB, False calculates peak value in amplitude
+        is_dB: Effecting pad_value. True calculates peak value in dB, False calculates peak value in amplitude.
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
@@ -28,7 +28,7 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
         if is_dB == True:
             pad_value = -90
@@ -80,10 +80,10 @@ class peak:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
-        attack_range_low: attack control range low (0,1]
-        attack_range_high: attack control range high (0,1]
-        release_range_low: release control range low (0,1]
-        release_range_high: release control range high (0,1]
+        attack_range_low: attack control range low (0,1)
+        attack_range_high: attack control range high (0,1)
+        release_range_low: release control range low (0,1)
+        release_range_high: release control range high (0,1)
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
@@ -93,12 +93,12 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(
+        attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
-        release_coeff = process.time_coefficient_computer(
+        release_coeff = P.time_coefficient_computer(
             release_time, sr, release_range_low, release_range_high
         )
 
@@ -132,10 +132,10 @@ class peak:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
-        attack_range_low: attack control range low (0,1]
-        attack_range_high: attack control range high (0,1]
-        release_range_low: release control range low (0,1]
-        release_range_high: release control range high (0,1]
+        attack_range_low: attack control range low (0,1)
+        attack_range_high: attack control range high (0,1)
+        release_range_low: release control range low (0,1)
+        release_range_high: release control range high (0,1)
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
@@ -146,12 +146,12 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(
+        attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
-        release_coeff = process.time_coefficient_computer(
+        release_coeff = P.time_coefficient_computer(
             release_time, sr, release_range_low, release_range_high
         )
 
@@ -165,7 +165,7 @@ class peak:
                     peak_state[i, j] = max(
                         input[i, j], release_coeff * peak_state[i, j - 1]
                     )
-            peak = process.smooth_filter(peak_state, attack_coeff)
+            peak = P.smooth_filter(peak_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -199,10 +199,10 @@ class peak:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
-        attack_range_low: attack control range low (0,1]
-        attack_range_high: attack control range high (0,1]
-        release_range_low: release control range low (0,1]
-        release_range_high: release control range high (0,1]
+        attack_range_low: attack control range low (0,1)
+        attack_range_high: attack control range high (0,1)
+        release_range_low: release control range low (0,1)
+        release_range_high: release control range high (0,1)
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
@@ -213,12 +213,12 @@ class peak:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(
+        attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
-        release_coeff = process.time_coefficient_computer(
+        release_coeff = P.time_coefficient_computer(
             release_time, sr, release_range_low, release_range_high
         )
 
@@ -234,7 +234,7 @@ class peak:
                         release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j],
                     )
-            peak = process.smooth_filter(peak_state, attack_coeff)
+            peak = P.smooth_filter(peak_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -269,7 +269,7 @@ class RMS:
         sr: sample rate (Hz)
         lookback: RMS pre window (ms)
         lookahead: RMS post window (ms)
-        is_dB: True calculates RMS value in dB, False calculates RMS value in amplitude
+        is_dB: Effecting pad_value. True calculates RMS value in dB, False calculates RMS value in amplitude.
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
@@ -279,7 +279,7 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
         if is_dB == True:
             pad_value = -90
@@ -326,10 +326,8 @@ class RMS:
         input: audio amplitude
         sr: sample rate (Hz)
         time: attack time (ms)
-        attack_range_low: attack control range low (0,1]
-        attack_range_high: attack control range high (0,1]
-        release_range_low: release control range low (0,1]
-        release_range_high: release control range high (0,1]
+        range_low: time control range low (0,1)
+        range_high: time control range high (0,1)
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
@@ -339,13 +337,13 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
-        coeff = process.time_coefficient_computer(time, sr, range_low, range_high)
+        coeff = P.time_coefficient_computer(time, sr, range_low, range_high)
 
         input = torch.square(input)
 
-        RMS = process.smooth_filter(input, coeff)
+        RMS = P.smooth_filter(input, coeff)
         RMS = torch.sqrt(RMS)
 
         return RMS
@@ -368,10 +366,10 @@ class RMS:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
-        attack_range_low: attack control range low (0,1]
-        attack_range_high: attack control range high (0,1]
-        release_range_low: release control range low (0,1]
-        release_range_high: release control range high (0,1]
+        attack_range_low: attack control range low (0,1)
+        attack_range_high: attack control range high (0,1)
+        release_range_low: release control range low (0,1)
+        release_range_high: release control range high (0,1)
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
         return: RMS value
@@ -382,12 +380,12 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(
+        attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
-        release_coeff = process.time_coefficient_computer(
+        release_coeff = P.time_coefficient_computer(
             release_time, sr, release_range_low, release_range_high
         )
 
@@ -402,7 +400,7 @@ class RMS:
                     RMS_state[i, j] = (
                         input[i, j] + release_coeff * RMS_state[i, j - 1]
                     ) / 2
-            RMS = process.smooth_filter(RMS_state, attack_coeff)
+            RMS = P.smooth_filter(RMS_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -438,10 +436,10 @@ class RMS:
         sr: sample rate (Hz)
         attack_time: attack time (ms)
         release_time: release time (ms)
-        attack_range_low: attack control range low (0,1]
-        attack_range_high: attack control range high (0,1]
-        release_range_low: release control range low (0,1]
-        release_range_high: release control range high (0,1]
+        attack_range_low: attack control range low (0,1)
+        attack_range_high: attack control range high (0,1)
+        release_range_low: release control range low (0,1)
+        release_range_high: release control range high (0,1)
         mode: 0 is decoupled style, 1 is branch style
         multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
         return: RMS value
@@ -452,12 +450,12 @@ class RMS:
             input = input.unsqueeze(0)
 
         if multichannel == False:
-            input = process.to_mono(input)
+            input = P.to_mono(input)
 
-        attack_coeff = process.time_coefficient_computer(
+        attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
-        release_coeff = process.time_coefficient_computer(
+        release_coeff = P.time_coefficient_computer(
             release_time, sr, release_range_low, release_range_high
         )
 
@@ -474,7 +472,7 @@ class RMS:
                         + release_coeff * peak_state[i, j - 1]
                         + (1 - release_coeff) * input[i, j]
                     ) / 3
-            RMS = process.smooth_filter(peak_state, attack_coeff)
+            RMS = P.smooth_filter(peak_state, attack_coeff)
 
         if mode == 1:
             for i in range(channel):
@@ -494,3 +492,104 @@ class RMS:
         RMS = torch.sqrt(RMS)
 
         return RMS
+
+
+class drc_time:
+    def test_signal(
+        freq=1000,
+        sr=96000,
+        amplitude1=0.0316,
+        length1=1,
+        amplitude2=1,
+        length2=4,
+        amplitude3=0.0316,
+        length3=5,
+    ):
+        """
+        Generate a signal for time test
+        freq: frequency of the signal (hz)
+        sr: sample rate of the signal (hz)
+        amplitude1: amplitude of the first stage
+        length1: length of the first stage (s)
+        amplitude2: amplitude of the second stage
+        length2: length of the second stage (s)
+        amplitude3: amplitude of the third stage
+        length3: length of the third stage (s)
+        return: signal
+        """
+        stage1 = P.generate_signal(freq, sr, amplitude1, length1)
+        stage2 = P.generate_signal(freq, sr, amplitude2, length2)
+        stage3 = P.generate_signal(freq, sr, amplitude3, length3)
+        signal = torch.cat((stage1, stage2, stage3), 1)
+        return signal
+
+    def time_extract(test, result, sr=96000):
+        """
+        Extract the time from the time test signal
+        test: time test signal raw
+        result: time test signal processed
+        sr: sample rate of the signal (hz)
+        return: time featrue
+        """
+        result = torch.abs(result[0, :])
+        test = torch.abs(test[0, :])
+
+        result = peak.digital(result, sr, 20, 0)
+        test = peak.digital(test, sr, 20, 0)
+
+        gain = result / test
+
+        gain[0, 0:100] = 1
+        gain = torch.where(torch.isnan(gain), torch.tensor(3.1623e-05), gain)
+
+        gain = F.amplitude_to_DB(gain, 20, 0, 0, 90)
+        return gain
+
+
+class drc_ratio:
+    def test_signal(freq=1000, sr=96000):
+        """
+        Generate a signal for ratio test
+        freq: test signal frequency
+        sr: sample rate of the signal (hz)
+        return: signal
+        """
+        stage = torch.zeros(91, sr * 5)
+        signal = torch.zeros(1)
+        for i in range(91):
+            amp = F.DB_to_amplitude(torch.tensor(i - 90), 1, 0.5)
+            stage_stage = P.generate_signal(freq, sr, amp, 5)
+            stage[i, :] = stage_stage[0, :]
+            signal = torch.cat((signal, stage[i, :]), 0)
+        signal = signal[1:]
+        signal = signal.unsqueeze(0)
+
+        return signal
+
+    def ratio_extract(ratiotest, sr):
+        """
+        Extract the ratio from the ratio test signal
+        ratiotest: ratio test signal processed
+        sr: sample rate of the signal (hz)
+        return: ratio feature
+        """
+        output = torch.zeros(91)
+        ratiotest = ratiotest[0, :]
+
+        # 先选取每个阶段的最后0.15s，因为前面没意义，同时为peak计算节省运算量
+        ratiotest_stage = torch.zeros(1)
+        for i in range(91):
+            stage = ratiotest[int(i * sr * 5 + sr * 4.85) : (i + 1) * sr * 5]
+            ratiotest_stage = torch.cat((ratiotest_stage, stage), 0)
+        ratiotest = ratiotest_stage[1:]
+
+        ratiotest = peak.digital(ratiotest, sr, 20, 0)
+        ratiotest = ratiotest[0, :]
+
+        for i in range(91):
+            # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
+            stage = ratiotest[int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)]
+            stage = min(stage)
+            output[i] = stage
+        output = output.unsqueeze(0)
+        return output

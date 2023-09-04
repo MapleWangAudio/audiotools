@@ -1,12 +1,9 @@
 from .distortion import nonlinear, clip
 from .drc import (
     gain_computer,
-    timetest_signal,
-    time_extract,
-    ratiotest_signal,
-    ratio_extract,
 )
 from .general import (
+    generate_signal,
     time_coefficient_computer,
     smooth_filter,
     to_mono,
@@ -17,10 +14,7 @@ __all__ = [
     "nonlinear",
     "clip",
     "gain_computer",
-    "timetest_signal",
-    "time_extract",
-    "ratiotest_signal",
-    "ratio_extract",
+    "generate_signal",
     "time_coefficient_computer",
     "smooth_filter",
     "to_mono",

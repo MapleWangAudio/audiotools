@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import torchaudio
+import torchaudio.functional as F
 import torch
 import numpy as np
 from scipy import signal
@@ -18,18 +19,18 @@ def waveform(
     Plots the waveform of an audio data.
     input: audio amplitude
     sample_rate: sample rate (Hz)
-    dB: True plots the waveform in dB, False plots the waveform in amplitude
-    save: True saves the plot as a .svg file, False does not save the plot
     show: True shows the plot, False does not show the plot
-    name: name of the saved file
     end: the last plot must be set to True, otherwise the plot will not be displayed
+    dB: True plots the waveform in dB, False plots the waveform in amplitude
+    name: name of the saved file
+    save: True saves the plot as a .svg file, False does not save the plot
     """
     if input.dim() == 0:
         input = input.unsqueeze(0)
     if input.dim() == 1:
         input = input.unsqueeze(0)
     if dB:
-        input = torchaudio.functional.amplitude_to_DB(input, 20, 0, 0, 90)
+        input = F.amplitude_to_DB(input, 20, 0, 0, 90)
     input = input.numpy()
 
     num_channels, num_frames = input.shape
@@ -65,10 +66,10 @@ def specgram(
     Plots the spectrogram of an audio data.
     input: audio amplitude
     sample_rate: sample rate (Hz)
-    save: True saves the plot as a .svg file, False does not save the plot
     show: True shows the plot, False does not show the plot
-    name: name of the saved file
     end: the last plot must be set to True, otherwise the plot will not be displayed
+    name: name of the saved file
+    save: True saves the plot as a .svg file, False does not save the plot
     """
     if input.dim() == 0:
         input = input.unsqueeze(0)
@@ -76,7 +77,7 @@ def specgram(
         input = input.unsqueeze(0)
 
     specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(input)
-    specgram_db = torchaudio.functional.amplitude_to_DB(specgram, 20, 0, 0, 90)
+    specgram_db = F.amplitude_to_DB(specgram, 20, 0, 0, 90)
 
     num_channels, num_frames = input.shape
     time_axis = num_frames / sample_rate
@@ -120,10 +121,10 @@ def fvtool(
     b: numerator coefficients of the filter
     a: denominator coefficients of the filter
     sample_rate: sample rate (Hz)
-    save: True saves the plot as a .svg file, False does not save the plot
     show: True shows the plot, False does not show the plot
-    name: name of the saved file
     end: the last plot must be set to True, otherwise the plot will not be displayed
+    name: name of the saved file
+    save: True saves the plot as a .svg file, False does not save the plot
     """
     b = b.numpy()
     if isinstance(a, torch.Tensor):
