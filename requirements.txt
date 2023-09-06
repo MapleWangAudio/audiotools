@@ -1,3 +1,4 @@
 # pytorch（请先自行下载）
 matplotlib
 scipy
+tensorboard

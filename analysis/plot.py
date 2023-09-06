@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import torchaudio
 import torchaudio.functional as F
+import torchvision
+import torch.utils.tensorboard as tb
 import torch
 import numpy as np
 from scipy import signal
@@ -9,28 +11,23 @@ from scipy import signal
 def waveform(
     input,
     sample_rate=48000,
-    show=False,
     end=False,
-    dB=False,
-    name="waveform",
+    name="waveform.png",
     save=True,
 ):
     """
     Plots the waveform of an audio data.
     input: audio amplitude
     sample_rate: sample rate (Hz)
-    show: True shows the plot, False does not show the plot
     end: the last plot must be set to True, otherwise the plot will not be displayed
-    dB: True plots the waveform in dB, False plots the waveform in amplitude
     name: name of the saved file
-    save: True saves the plot as a .svg file, False does not save the plot
+    save: True saves the plot as a file, False does not save the plot
     """
     if input.dim() == 0:
         input = input.unsqueeze(0)
     if input.dim() == 1:
         input = input.unsqueeze(0)
-    if dB:
-        input = F.amplitude_to_DB(input, 20, 0, 0, 90)
+
     input = input.numpy()
 
     num_channels, num_frames = input.shape
@@ -48,28 +45,27 @@ def waveform(
     figure.suptitle(name)
 
     if save:
-        name = name + ".svg"
-        plt.savefig(name, format="svg")
-    if show:
-        plt.show(block=end)
+        save_format = name[-3:]
+        name = name
+        plt.savefig(name, format=save_format)
+
+    plt.show(block=end)
 
 
 def specgram(
     input,
     sample_rate=48000,
-    show=False,
     end=False,
-    name="specgram",
+    name="specgram.png",
     save=True,
 ):
     """
     Plots the spectrogram of an audio data.
     input: audio amplitude
     sample_rate: sample rate (Hz)
-    show: True shows the plot, False does not show the plot
     end: the last plot must be set to True, otherwise the plot will not be displayed
     name: name of the saved file
-    save: True saves the plot as a .svg file, False does not save the plot
+    save: True saves the plot as a file, False does not save the plot
     """
     if input.dim() == 0:
         input = input.unsqueeze(0)
@@ -101,17 +97,17 @@ def specgram(
     fig.suptitle(name)
 
     if save:
-        name = name + ".svg"
-        plt.savefig(name, format="svg")
-    if show:
-        plt.show(block=end)
+        save_format = name[-3:]
+        name = name
+        plt.savefig(name, format=save_format)
+
+    plt.show(block=end)
 
 
 def fvtool(
     b,
     a=1,
     sample_rate=48000,
-    show=False,
     end=False,
     name="fvtool",
     save=True,
@@ -121,10 +117,9 @@ def fvtool(
     b: numerator coefficients of the filter
     a: denominator coefficients of the filter
     sample_rate: sample rate (Hz)
-    show: True shows the plot, False does not show the plot
     end: the last plot must be set to True, otherwise the plot will not be displayed
     name: name of the saved file
-    save: True saves the plot as a .svg file, False does not save the plot
+    save: True saves the plot as a file, False does not save the plot
     """
     b = b.numpy()
     if isinstance(a, torch.Tensor):
@@ -147,7 +142,26 @@ def fvtool(
     ax2.grid()
 
     if save:
-        name = name + ".svg"
-        plt.savefig(name, format="svg")
-    if show:
-        plt.show(block=end)
+        save_format = name[-3:]
+        name = name
+        plt.savefig(name, format=save_format)
+
+    plt.show(block=end)
+
+
+def show_in_tb(img_path, name="Image"):
+    """
+    Shows an image in TensorBoard. To lanuch tb in vscode, use ctrl+shift+p, then input >python:launch tesnorboard.
+    img_path: a string list path to the image, just read png and jpg.
+    name: name of the image in tensorboard
+    """
+    writer = tb.SummaryWriter()
+
+    # Load the image
+    for i in range(len(img_path)):
+        img = torchvision.io.read_image(img_path[i], torchvision.io.ImageReadMode.RGB)
+        # Add the image to TensorBoard
+        writer.add_image(name, img)
+
+    # Close the writer
+    writer.close()

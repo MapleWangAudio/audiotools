@@ -1,5 +1,5 @@
 from .feature import peak, RMS, drc_time, drc_ratio
-from .plot import fvtool, waveform, specgram
+from .plot import fvtool, waveform, specgram, show_in_tb
 
 __all__ = [
     "peak",
@@ -9,4 +9,5 @@ __all__ = [
     "fvtool",
     "waveform",
     "specgram",
+    "show_in_tb",
 ]

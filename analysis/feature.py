@@ -531,6 +531,16 @@ class drc_time:
         sr: sample rate of the signal (hz)
         return: time featrue
         """
+        if test.dim() == 0:
+            test = test.unsqueeze(0)
+        if test.dim() == 1:
+            test = test.unsqueeze(0)
+
+        if result.dim() == 0:
+            result = result.unsqueeze(0)
+        if result.dim() == 1:
+            result = result.unsqueeze(0)
+
         result = torch.abs(result[0, :])
         test = torch.abs(test[0, :])
 
@@ -573,6 +583,11 @@ class drc_ratio:
         sr: sample rate of the signal (hz)
         return: ratio feature
         """
+        if ratiotest.dim() == 0:
+            ratiotest = ratiotest.unsqueeze(0)
+        if ratiotest.dim() == 1:
+            ratiotest = ratiotest.unsqueeze(0)
+
         output = torch.zeros(91)
         ratiotest = ratiotest[0, :]
 
