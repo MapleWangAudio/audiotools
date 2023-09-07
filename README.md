@@ -11,7 +11,7 @@ pip install -r requirements.txt
 或者
 
 ```
-conda install --yes --file requirements.txt    #这种执行方式，一遇到安装不上就整体停止不会继续下面的包安装
+conda install -c pytorch -c defaults --file requirements.txt
 ```
 
 # 使用方法

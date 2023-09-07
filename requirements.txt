@@ -1,4 +1,6 @@
-# pytorch（请先自行下载）
+pytorch
+torchvision
+torchaudio
 matplotlib
 scipy
 tensorboard
