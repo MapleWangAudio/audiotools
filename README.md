@@ -14,10 +14,10 @@ pip install -r requirements.txt
 conda install -c pytorch -c defaults --file requirements.txt
 ```
 
-requirements_add.txt中有一些常用的额外的库，可以选择性安装。当然，不安装add也能正常使用本库
+requirements_extra.txt中有一些常用的额外的库，可以选择性安装。当然，不安装extra也能正常使用本库
 
 ```
-conda install --file requirements_add.txt
+conda install --file requirements_extra.txt
 ```
 
 # 使用方法
