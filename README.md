@@ -22,7 +22,7 @@ conda install --file requirements_extra.txt
 
 # 使用方法
 
-放在工程目录下，然后
+放在工程目录下，与main.py同级，然后
 
 ```
 from audiotools import analysis as A
@@ -57,7 +57,9 @@ analysis：分析绘图&特征提取
 
 wsl可能没有gui，如果想要gui显示，需要下载gui支持，可以尝试：
 
+```
 sudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
+```
 
 这里使用savefig解决
 
