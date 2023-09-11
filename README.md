@@ -25,8 +25,8 @@ conda install --file requirements_extra.txt
 放在工程目录下，与main.py同级，然后
 
 ```
-from audiotools import analysis as A
-from audiotools import process as P
+import audiotools.analysis as A
+import audiotools.process as P
 ```
 
 # 版本号定义
