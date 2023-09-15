@@ -25,8 +25,18 @@ conda install --file requirements_extra.txt
 放在工程目录下，与main.py同级，然后
 
 ```
-import audiotools.analysis as A
-import audiotools.process as P
+import audiotools.analysis as analysis
+import audiotools.process as process
+```
+
+不同级的话，需要在上列代码之前额外添加如下代码
+
+```
+import sys
+sys.path.append("/your/audiotools/path")
+# 如audiools在/home/user/audiotools
+# 则为/home/user即可
+# 当然，也可以使用相对路径
 ```
 
 # 版本号定义

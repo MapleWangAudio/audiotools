@@ -390,19 +390,26 @@ class RMS:
         )
 
         channel, input_length = input.shape
-        input = torch.square(input)
         RMS = torch.zeros_like(input)
 
         if mode == 0:
             RMS_state = torch.zeros_like(input)
+
             for i in range(channel):
                 for j in range(1, input_length):
                     RMS_state[i, j] = (
-                        input[i, j] + release_coeff * RMS_state[i, j - 1]
+                        input[i, j] ** 2 + (release_coeff * RMS_state[i, j - 1]) ** 2
                     ) / 2
-            RMS = P.smooth_filter(RMS_state, attack_coeff)
+                    RMS_state[i, j] = RMS_state[i, j] ** 0.5
+
+                    RMS[i, j] = (
+                        attack_coeff * RMS[i, j - 1]
+                        + (1 - attack_coeff) * RMS_state[i, j]
+                    )
 
         if mode == 1:
+            input = torch.square(input)
+
             for i in range(channel):
                 for j in range(1, input_length):
                     if input[i, j] > RMS[i, j - 1]:
@@ -414,7 +421,7 @@ class RMS:
                     else:
                         RMS[i, j] = release_coeff * RMS[i, j - 1]
 
-        RMS = torch.sqrt(RMS)
+            RMS = torch.sqrt(RMS)
 
         return RMS
 
@@ -460,21 +467,31 @@ class RMS:
         )
 
         channel, input_length = input.shape
-        input = torch.square(input)
         RMS = torch.zeros_like(input)
 
         if mode == 0:
-            peak_state = torch.zeros_like(input)
+            RMS_state = torch.zeros_like(input)
+
             for i in range(channel):
                 for j in range(1, input_length):
-                    peak_state[i, j] = (
-                        input[i, j]
-                        + release_coeff * peak_state[i, j - 1]
-                        + (1 - release_coeff) * input[i, j]
-                    ) / 3
-            RMS = P.smooth_filter(peak_state, attack_coeff)
+                    RMS_state[i, j] = (
+                        input[i, j] ** 2
+                        + (
+                            release_coeff * RMS_state[i, j - 1]
+                            + (1 - release_coeff) * input[i, j]
+                        )
+                        ** 2
+                    ) / 2
+                    RMS_state[i, j] = RMS_state[i, j] ** 0.5
+
+                    RMS[i, j] = (
+                        attack_coeff * RMS[i, j - 1]
+                        + (1 - attack_coeff) * RMS_state[i, j]
+                    )
 
         if mode == 1:
+            input = torch.square(input)
+
             for i in range(channel):
                 for j in range(1, input_length):
                     if input[i, j] > RMS[i, j - 1]:
@@ -489,7 +506,7 @@ class RMS:
                             + (1 - release_coeff) * input[i, j]
                         )
 
-        RMS = torch.sqrt(RMS)
+            RMS = torch.sqrt(RMS)
 
         return RMS
 
