@@ -109,7 +109,7 @@ def fvtool(
     a=1,
     sample_rate=48000,
     end=False,
-    name="fvtool",
+    name="fvtool.png",
     save=True,
 ):
     """
