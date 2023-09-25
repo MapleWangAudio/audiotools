@@ -43,6 +43,7 @@ def time_coefficient_computer(
     shape_control = math.log((1 - range_low) / (1 - range_high))
     shape_control = torch.tensor(shape_control)
     shape_control *= -1
+
     return torch.exp(shape_control / (time * 0.001 * sample_rate))
 
 
@@ -66,10 +67,19 @@ def smooth_filter(
     if order == 1:
         channel, length = input.shape
         output = torch.zeros_like(input)
-        for i in range(channel):
-            for j in range(1, length):
-                output[i, j] = coeff * output[i, j - 1] + (1 - coeff) * input[i, j]
 
+        if coeff.dim() == 0:
+            for i in range(channel):
+                for j in range(1, length):
+                    output[i, j] = coeff * output[i, j - 1] + (1 - coeff) * input[i, j]
+        else:
+            for i in range(channel):
+                for j in range(1, length):
+                    output[i, j] = (
+                        coeff[j] * output[i, j - 1] + (1 - coeff[j]) * input[i, j]
+                    )
+
+    # todo: 让order2也可以接受数组
     if order == 2:
         b = torch.zeros(3)
         a = torch.zeros(3)

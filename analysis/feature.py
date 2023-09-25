@@ -95,6 +95,9 @@ class peak:
         if multichannel == False:
             input = P.to_mono(input)
 
+        channel, input_length = input.shape
+        peak = torch.zeros_like(input)
+
         attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
@@ -102,15 +105,38 @@ class peak:
             release_time, sr, release_range_low, release_range_high
         )
 
-        channel, input_length = input.shape
-        peak = torch.zeros_like(input)
+        if attack_coeff.dim() == 0:
+            attack_coeff = torch.nn.functional.pad(
+                attack_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                attack_coeff,
+            )
+            attack_coeff = attack_coeff.unsqueeze(0).unsqueeze(0)
+        if attack_coeff.dim() == 1:
+            attack_coeff = attack_coeff.unsqueeze(0)
+
+        if release_coeff.dim() == 0:
+            release_coeff = torch.nn.functional.pad(
+                release_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                release_coeff,
+            )
+            release_coeff = release_coeff.unsqueeze(0).unsqueeze(0)
 
         # Peak Detectors
         for i in range(channel):
             for j in range(1, input_length):
-                peak[i, j] = release_coeff * peak[i, j - 1] + (1 - attack_coeff) * max(
-                    (input[i, j] - peak[i, j - 1]), 0
-                )
+                peak[i, j] = release_coeff[i, j] * peak[i, j - 1] + (
+                    1 - attack_coeff[i, j]
+                ) * max((input[i, j] - peak[i, j - 1]), 0)
 
         return peak
 
@@ -148,6 +174,9 @@ class peak:
         if multichannel == False:
             input = P.to_mono(input)
 
+        channel, input_length = input.shape
+        peak = torch.zeros_like(input)
+
         attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
@@ -155,29 +184,50 @@ class peak:
             release_time, sr, release_range_low, release_range_high
         )
 
-        channel, input_length = input.shape
-        peak = torch.zeros_like(input)
+        if attack_coeff.dim() == 0:
+            attack_coeff = torch.nn.functional.pad(
+                attack_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                attack_coeff,
+            )
+            attack_coeff = attack_coeff.unsqueeze(0).unsqueeze(0)
+
+        if release_coeff.dim() == 0:
+            release_coeff = torch.nn.functional.pad(
+                release_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                release_coeff,
+            )
+            release_coeff = release_coeff.unsqueeze(0).unsqueeze(0)
 
         if mode == 0:
             peak_state = torch.zeros_like(input)
             for i in range(channel):
                 for j in range(1, input_length):
                     peak_state[i, j] = max(
-                        input[i, j], release_coeff * peak_state[i, j - 1]
+                        input[i, j], release_coeff[i, j] * peak_state[i, j - 1]
                     )
-            peak = P.smooth_filter(peak_state, attack_coeff)
+            peak = P.smooth_filter(peak_state, attack_coeff[i, j])
 
         if mode == 1:
             for i in range(channel):
                 for j in range(1, input_length):
                     if input[i, j] > peak[i, j - 1]:
                         peak[i, j] = (
-                            attack_coeff * peak[i, j - 1]
-                            + (1 - attack_coeff) * input[i, j]
+                            attack_coeff[i, j] * peak[i, j - 1]
+                            + (1 - attack_coeff[i, j]) * input[i, j]
                         )
 
                     else:
-                        peak[i, j] = release_coeff * peak[i, j - 1]
+                        peak[i, j] = release_coeff[i, j] * peak[i, j - 1]
 
         return peak
 
@@ -215,6 +265,9 @@ class peak:
         if multichannel == False:
             input = P.to_mono(input)
 
+        channel, input_length = input.shape
+        peak = torch.zeros_like(input)
+
         attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
@@ -222,8 +275,25 @@ class peak:
             release_time, sr, release_range_low, release_range_high
         )
 
-        channel, input_length = input.shape
-        peak = torch.zeros_like(input)
+        if attack_coeff.dim() == 0:
+            attack_coeff = torch.nn.functional.pad(
+                attack_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                attack_coeff,
+            )
+            release_coeff = torch.nn.functional.pad(
+                release_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                release_coeff,
+            )
 
         if mode == 0:
             peak_state = torch.zeros_like(input)
@@ -231,24 +301,24 @@ class peak:
                 for j in range(1, input_length):
                     peak_state[i, j] = max(
                         input[i, j],
-                        release_coeff * peak_state[i, j - 1]
-                        + (1 - release_coeff) * input[i, j],
+                        release_coeff[i, j] * peak_state[i, j - 1]
+                        + (1 - release_coeff[i, j]) * input[i, j],
                     )
-            peak = P.smooth_filter(peak_state, attack_coeff)
+            peak = P.smooth_filter(peak_state, attack_coeff[i, j])
 
         if mode == 1:
             for i in range(channel):
                 for j in range(1, input_length):
                     if input[i, j] > peak[i, j - 1]:
                         peak[i, j] = (
-                            attack_coeff * peak[i, j - 1]
-                            + (1 - attack_coeff) * input[i, j]
+                            attack_coeff[i, j] * peak[i, j - 1]
+                            + (1 - attack_coeff[i, j]) * input[i, j]
                         )
 
                     else:
                         peak[i, j] = (
-                            release_coeff * peak[i, j - 1]
-                            + (1 - release_coeff) * input[i, j]
+                            release_coeff[i, j] * peak[i, j - 1]
+                            + (1 - release_coeff[i, j]) * input[i, j]
                         )
 
         return peak
@@ -382,6 +452,9 @@ class RMS:
         if multichannel == False:
             input = P.to_mono(input)
 
+        channel, input_length = input.shape
+        RMS = torch.zeros_like(input)
+
         attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
@@ -389,8 +462,25 @@ class RMS:
             release_time, sr, release_range_low, release_range_high
         )
 
-        channel, input_length = input.shape
-        RMS = torch.zeros_like(input)
+        if attack_coeff.dim() == 0:
+            attack_coeff = torch.nn.functional.pad(
+                attack_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                attack_coeff,
+            )
+            release_coeff = torch.nn.functional.pad(
+                release_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                release_coeff,
+            )
 
         if mode == 0:
             RMS_state = torch.zeros_like(input)
@@ -398,13 +488,14 @@ class RMS:
             for i in range(channel):
                 for j in range(1, input_length):
                     RMS_state[i, j] = (
-                        input[i, j] ** 2 + (release_coeff * RMS_state[i, j - 1]) ** 2
+                        input[i, j] ** 2
+                        + (release_coeff[i, j] * RMS_state[i, j - 1]) ** 2
                     ) / 2
                     RMS_state[i, j] = RMS_state[i, j] ** 0.5
 
                     RMS[i, j] = (
-                        attack_coeff * RMS[i, j - 1]
-                        + (1 - attack_coeff) * RMS_state[i, j]
+                        attack_coeff[i, j] * RMS[i, j - 1]
+                        + (1 - attack_coeff[i, j]) * RMS_state[i, j]
                     )
 
         if mode == 1:
@@ -414,12 +505,12 @@ class RMS:
                 for j in range(1, input_length):
                     if input[i, j] > RMS[i, j - 1]:
                         RMS[i, j] = (
-                            attack_coeff * RMS[i, j - 1]
-                            + (1 - attack_coeff) * input[i, j]
+                            attack_coeff[i, j] * RMS[i, j - 1]
+                            + (1 - attack_coeff[i, j]) * input[i, j]
                         )
 
                     else:
-                        RMS[i, j] = release_coeff * RMS[i, j - 1]
+                        RMS[i, j] = release_coeff[i, j] * RMS[i, j - 1]
 
             RMS = torch.sqrt(RMS)
 
@@ -459,6 +550,9 @@ class RMS:
         if multichannel == False:
             input = P.to_mono(input)
 
+        channel, input_length = input.shape
+        RMS = torch.zeros_like(input)
+
         attack_coeff = P.time_coefficient_computer(
             attack_time, sr, attack_range_low, attack_range_high
         )
@@ -466,8 +560,25 @@ class RMS:
             release_time, sr, release_range_low, release_range_high
         )
 
-        channel, input_length = input.shape
-        RMS = torch.zeros_like(input)
+        if attack_coeff.dim() == 0:
+            attack_coeff = torch.nn.functional.pad(
+                attack_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                attack_coeff,
+            )
+            release_coeff = torch.nn.functional.pad(
+                release_coeff,
+                (
+                    0,
+                    input_length - 1,
+                ),
+                "constant",
+                release_coeff,
+            )
 
         if mode == 0:
             RMS_state = torch.zeros_like(input)
@@ -477,16 +588,16 @@ class RMS:
                     RMS_state[i, j] = (
                         input[i, j] ** 2
                         + (
-                            release_coeff * RMS_state[i, j - 1]
-                            + (1 - release_coeff) * input[i, j]
+                            release_coeff[i, j] * RMS_state[i, j - 1]
+                            + (1 - release_coeff[i, j]) * input[i, j]
                         )
                         ** 2
                     ) / 2
                     RMS_state[i, j] = RMS_state[i, j] ** 0.5
 
                     RMS[i, j] = (
-                        attack_coeff * RMS[i, j - 1]
-                        + (1 - attack_coeff) * RMS_state[i, j]
+                        attack_coeff[i, j] * RMS[i, j - 1]
+                        + (1 - attack_coeff[i, j]) * RMS_state[i, j]
                     )
 
         if mode == 1:
@@ -496,14 +607,14 @@ class RMS:
                 for j in range(1, input_length):
                     if input[i, j] > RMS[i, j - 1]:
                         RMS[i, j] = (
-                            attack_coeff * RMS[i, j - 1]
-                            + (1 - attack_coeff) * input[i, j]
+                            attack_coeff[i, j] * RMS[i, j - 1]
+                            + (1 - attack_coeff[i, j]) * input[i, j]
                         )
 
                     else:
                         RMS[i, j] = (
-                            release_coeff * RMS[i, j - 1]
-                            + (1 - release_coeff) * input[i, j]
+                            release_coeff[i, j] * RMS[i, j - 1]
+                            + (1 - release_coeff[i, j]) * input[i, j]
                         )
 
             RMS = torch.sqrt(RMS)
