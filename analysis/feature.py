@@ -115,7 +115,7 @@ class peak:
                 "constant",
                 attack_coeff,
             )
-            attack_coeff = attack_coeff.unsqueeze(0).unsqueeze(0)
+            attack_coeff = attack_coeff.unsqueeze(0)
         if attack_coeff.dim() == 1:
             attack_coeff = attack_coeff.unsqueeze(0)
 
@@ -129,7 +129,9 @@ class peak:
                 "constant",
                 release_coeff,
             )
-            release_coeff = release_coeff.unsqueeze(0).unsqueeze(0)
+            release_coeff = release_coeff.unsqueeze(0)
+        if release_coeff.dim() == 1:
+            release_coeff = release_coeff.unsqueeze(0)
 
         # Peak Detectors
         for i in range(channel):
@@ -194,7 +196,9 @@ class peak:
                 "constant",
                 attack_coeff,
             )
-            attack_coeff = attack_coeff.unsqueeze(0).unsqueeze(0)
+            attack_coeff = attack_coeff.unsqueeze(0)
+        if attack_coeff.dim() == 1:
+            attack_coeff = attack_coeff.unsqueeze(0)
 
         if release_coeff.dim() == 0:
             release_coeff = torch.nn.functional.pad(
@@ -206,7 +210,9 @@ class peak:
                 "constant",
                 release_coeff,
             )
-            release_coeff = release_coeff.unsqueeze(0).unsqueeze(0)
+            release_coeff = release_coeff.unsqueeze(0)
+        if release_coeff.dim() == 1:
+            release_coeff = release_coeff.unsqueeze(0)
 
         if mode == 0:
             peak_state = torch.zeros_like(input)
@@ -285,6 +291,11 @@ class peak:
                 "constant",
                 attack_coeff,
             )
+            attack_coeff = attack_coeff.unsqueeze(0)
+        if attack_coeff.dim() == 1:
+            attack_coeff = attack_coeff.unsqueeze(0)
+
+        if release_coeff.dim() == 0:
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -294,6 +305,9 @@ class peak:
                 "constant",
                 release_coeff,
             )
+            release_coeff = release_coeff.unsqueeze(0)
+        if release_coeff.dim() == 1:
+            release_coeff = release_coeff.unsqueeze(0)
 
         if mode == 0:
             peak_state = torch.zeros_like(input)
@@ -472,6 +486,11 @@ class RMS:
                 "constant",
                 attack_coeff,
             )
+            attack_coeff = attack_coeff.unsqueeze(0)
+        if attack_coeff.dim() == 1:
+            attack_coeff = attack_coeff.unsqueeze(0)
+
+        if release_coeff.dim() == 0:
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -481,6 +500,9 @@ class RMS:
                 "constant",
                 release_coeff,
             )
+            release_coeff = release_coeff.unsqueeze(0)
+        if release_coeff.dim() == 1:
+            release_coeff = release_coeff.unsqueeze(0)
 
         if mode == 0:
             RMS_state = torch.zeros_like(input)
@@ -570,6 +592,11 @@ class RMS:
                 "constant",
                 attack_coeff,
             )
+            attack_coeff = attack_coeff.unsqueeze(0)
+        if attack_coeff.dim() == 1:
+            attack_coeff = attack_coeff.unsqueeze(0)
+
+        if release_coeff.dim() == 0:
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -579,6 +606,9 @@ class RMS:
                 "constant",
                 release_coeff,
             )
+            release_coeff = release_coeff.unsqueeze(0)
+        if release_coeff.dim() == 1:
+            release_coeff = release_coeff.unsqueeze(0)
 
         if mode == 0:
             RMS_state = torch.zeros_like(input)

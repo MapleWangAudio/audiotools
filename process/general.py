@@ -76,7 +76,7 @@ def smooth_filter(
             for i in range(channel):
                 for j in range(1, length):
                     output[i, j] = (
-                        coeff[j] * output[i, j - 1] + (1 - coeff[j]) * input[i, j]
+                        coeff[i, j] * output[i, j - 1] + (1 - coeff[i, j]) * input[i, j]
                     )
 
     # todo: 让order2也可以接受数组
