@@ -23,11 +23,6 @@ def waveform(
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
     """
-    if input.dim() == 0:
-        input = input.unsqueeze(0)
-    if input.dim() == 1:
-        input = input.unsqueeze(0)
-
     input = input.numpy()
 
     num_channels, num_frames = input.shape
@@ -67,11 +62,6 @@ def specgram(
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
     """
-    if input.dim() == 0:
-        input = input.unsqueeze(0)
-    if input.dim() == 1:
-        input = input.unsqueeze(0)
-
     specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(input)
     specgram_db = F.amplitude_to_DB(specgram, 20, 0, 0, 90)
 

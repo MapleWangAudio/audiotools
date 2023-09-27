@@ -59,11 +59,6 @@ def smooth_filter(
     order: 1: first order filter, 2: second order filter
     return: smoothed input
     """
-    if input.dim() == 0:
-        input = input.unsqueeze(0)
-    if input.dim() == 1:
-        input = input.unsqueeze(0)
-
     if order == 1:
         channel, length = input.shape
         output = torch.zeros_like(input)
@@ -101,15 +96,14 @@ def to_mono(input):
     input: audio amplitude
     return: mono audio amplitude
     """
-    if input.ndim != 1:
-        input_all = torch.zeros(len(input[0, :]))
-        for i in range(0, len(input)):
+    if input.size(0) > 1:
+        input_all = 0
+        for i in range(0, input.size(0)):
             input_all = input_all + input[i, :]
-        input_mono = input_all / len(input)
+        input_mono = input_all / input.size(0)
+        output = input_mono.unsqueeze(0)
     else:
-        input_mono = input
-
-    output = input_mono.unsqueeze(0)
+        output = input
 
     return output
 

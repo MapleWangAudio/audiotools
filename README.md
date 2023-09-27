@@ -51,7 +51,7 @@ sys.path.append("/your/audiotools/path")
 
 # 规定
 
-1. 输入输出使用tensor, 格式为[ 通道, 数据 ], 推荐使用torchaudio读取
+1. 输入输出都使用tensor, 格式为[ 通道, 数据 ], 推荐使用torchaudio读取
 2. 所有方法都设计为一次处理一整个音频, 而非一个点一个点的处理
 3. 所有方法都应该尽量支持多声道处理
 

@@ -22,12 +22,7 @@ class peak:
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         if is_dB == True:
@@ -87,12 +82,7 @@ class peak:
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         channel, input_length = input.shape
@@ -106,6 +96,7 @@ class peak:
         )
 
         if attack_coeff.dim() == 0:
+            attack_coeff = attack_coeff.unsqueeze(0)
             attack_coeff = torch.nn.functional.pad(
                 attack_coeff,
                 (
@@ -113,13 +104,13 @@ class peak:
                     input_length - 1,
                 ),
                 "constant",
-                attack_coeff,
+                attack_coeff.item(),
             )
-            attack_coeff = attack_coeff.unsqueeze(0)
         if attack_coeff.dim() == 1:
             attack_coeff = attack_coeff.unsqueeze(0)
 
         if release_coeff.dim() == 0:
+            release_coeff = release_coeff.unsqueeze(0)
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -127,9 +118,8 @@ class peak:
                     input_length - 1,
                 ),
                 "constant",
-                release_coeff,
+                release_coeff.item(),
             )
-            release_coeff = release_coeff.unsqueeze(0)
         if release_coeff.dim() == 1:
             release_coeff = release_coeff.unsqueeze(0)
 
@@ -168,12 +158,7 @@ class peak:
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         channel, input_length = input.shape
@@ -187,6 +172,7 @@ class peak:
         )
 
         if attack_coeff.dim() == 0:
+            attack_coeff = attack_coeff.unsqueeze(0)
             attack_coeff = torch.nn.functional.pad(
                 attack_coeff,
                 (
@@ -194,13 +180,13 @@ class peak:
                     input_length - 1,
                 ),
                 "constant",
-                attack_coeff,
+                attack_coeff.item(),
             )
-            attack_coeff = attack_coeff.unsqueeze(0)
         if attack_coeff.dim() == 1:
             attack_coeff = attack_coeff.unsqueeze(0)
 
         if release_coeff.dim() == 0:
+            release_coeff = release_coeff.unsqueeze(0)
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -208,9 +194,8 @@ class peak:
                     input_length - 1,
                 ),
                 "constant",
-                release_coeff,
+                release_coeff.item(),
             )
-            release_coeff = release_coeff.unsqueeze(0)
         if release_coeff.dim() == 1:
             release_coeff = release_coeff.unsqueeze(0)
 
@@ -263,12 +248,7 @@ class peak:
         multichannel: True calculates peak value for each channel, False calculates peak value for all channels
         return: peak value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         channel, input_length = input.shape
@@ -282,6 +262,7 @@ class peak:
         )
 
         if attack_coeff.dim() == 0:
+            attack_coeff = attack_coeff.unsqueeze(0)
             attack_coeff = torch.nn.functional.pad(
                 attack_coeff,
                 (
@@ -289,13 +270,13 @@ class peak:
                     input_length - 1,
                 ),
                 "constant",
-                attack_coeff,
+                attack_coeff.item(),
             )
-            attack_coeff = attack_coeff.unsqueeze(0)
         if attack_coeff.dim() == 1:
             attack_coeff = attack_coeff.unsqueeze(0)
 
         if release_coeff.dim() == 0:
+            release_coeff = release_coeff.unsqueeze(0)
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -303,9 +284,8 @@ class peak:
                     input_length - 1,
                 ),
                 "constant",
-                release_coeff,
+                release_coeff.item(),
             )
-            release_coeff = release_coeff.unsqueeze(0)
         if release_coeff.dim() == 1:
             release_coeff = release_coeff.unsqueeze(0)
 
@@ -357,12 +337,7 @@ class RMS:
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         if is_dB == True:
@@ -415,12 +390,7 @@ class RMS:
         multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         coeff = P.time_coefficient_computer(time, sr, range_low, range_high)
@@ -458,12 +428,7 @@ class RMS:
         multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
         return: RMS value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         channel, input_length = input.shape
@@ -477,6 +442,7 @@ class RMS:
         )
 
         if attack_coeff.dim() == 0:
+            attack_coeff = attack_coeff.unsqueeze(0)
             attack_coeff = torch.nn.functional.pad(
                 attack_coeff,
                 (
@@ -484,13 +450,13 @@ class RMS:
                     input_length - 1,
                 ),
                 "constant",
-                attack_coeff,
+                attack_coeff.item(),
             )
-            attack_coeff = attack_coeff.unsqueeze(0)
         if attack_coeff.dim() == 1:
             attack_coeff = attack_coeff.unsqueeze(0)
 
         if release_coeff.dim() == 0:
+            release_coeff = release_coeff.unsqueeze(0)
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -498,9 +464,8 @@ class RMS:
                     input_length - 1,
                 ),
                 "constant",
-                release_coeff,
+                release_coeff.item(),
             )
-            release_coeff = release_coeff.unsqueeze(0)
         if release_coeff.dim() == 1:
             release_coeff = release_coeff.unsqueeze(0)
 
@@ -564,12 +529,7 @@ class RMS:
         multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
         return: RMS value
         """
-        if input.dim() == 0:
-            input = input.unsqueeze(0)
-        if input.dim() == 1:
-            input = input.unsqueeze(0)
-
-        if multichannel == False:
+        if (multichannel == False) & (input.size(0) > 1):
             input = P.to_mono(input)
 
         channel, input_length = input.shape
@@ -583,6 +543,7 @@ class RMS:
         )
 
         if attack_coeff.dim() == 0:
+            attack_coeff = attack_coeff.unsqueeze(0)
             attack_coeff = torch.nn.functional.pad(
                 attack_coeff,
                 (
@@ -590,13 +551,13 @@ class RMS:
                     input_length - 1,
                 ),
                 "constant",
-                attack_coeff,
+                attack_coeff.item(),
             )
-            attack_coeff = attack_coeff.unsqueeze(0)
         if attack_coeff.dim() == 1:
             attack_coeff = attack_coeff.unsqueeze(0)
 
         if release_coeff.dim() == 0:
+            release_coeff = release_coeff.unsqueeze(0)
             release_coeff = torch.nn.functional.pad(
                 release_coeff,
                 (
@@ -604,9 +565,8 @@ class RMS:
                     input_length - 1,
                 ),
                 "constant",
-                release_coeff,
+                release_coeff.item(),
             )
-            release_coeff = release_coeff.unsqueeze(0)
         if release_coeff.dim() == 1:
             release_coeff = release_coeff.unsqueeze(0)
 
@@ -689,16 +649,6 @@ class drc_time:
         sr: sample rate of the signal (hz)
         return: time featrue
         """
-        if test.dim() == 0:
-            test = test.unsqueeze(0)
-        if test.dim() == 1:
-            test = test.unsqueeze(0)
-
-        if result.dim() == 0:
-            result = result.unsqueeze(0)
-        if result.dim() == 1:
-            result = result.unsqueeze(0)
-
         result = torch.abs(result[0, :])
         test = torch.abs(test[0, :])
 
@@ -741,11 +691,6 @@ class drc_ratio:
         sr: sample rate of the signal (hz)
         return: ratio feature
         """
-        if ratiotest.dim() == 0:
-            ratiotest = ratiotest.unsqueeze(0)
-        if ratiotest.dim() == 1:
-            ratiotest = ratiotest.unsqueeze(0)
-
         output = torch.zeros(91)
         ratiotest = ratiotest[0, :]
 
