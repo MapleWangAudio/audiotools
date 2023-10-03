@@ -79,7 +79,11 @@ sudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-
 # 检查是否有可用的 GPU 设备
 if torch.cuda.is_available():
     # 设置默认的 GPU 设备为 GPU 0
-    torch.cuda.set_device(0)
+    device = torch.device("cuda:0")
+else:
+    device = torch.device("cpu")
+# 将 tensor 移动到设备 device 上
+test = test.to(device)
 ``````
 
 ## 将数据以float64计算的方法:
@@ -90,4 +94,4 @@ if torch.cuda.is_available():
 torch.set_default_dtype(torch.float64)
 ```
 
-对音频而言, float32不太够用, 所以最好使用float64
+对音频处理, float32不太够用, 尽量使用float64
