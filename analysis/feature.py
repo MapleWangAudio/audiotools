@@ -1,615 +1,238 @@
-import torch
-import torchaudio.functional as F
 from .. import process as P
+import numpy as np
 
 
 class peak:
-    def digital(
-        input,
-        sr=48000,
-        lookback=1,
-        lookahead=1,
-        is_dB=False,
-        multichannel=False,
-    ):
+    def digital(input):
         """
         Computes the peak value of an audio input. Digital Type
         input: audio amplitude
-        sr: sample rate (Hz)
-        lookback: peak pre window (ms)
-        lookahead: peak post window (ms)
-        is_dB: Effecting pad_value. True calculates peak value in dB, False calculates peak value in amplitude.
-        multichannel: True calculates peak value for each channel, False calculates peak value for all channels
-        return: peak value
+        return: peak values
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
 
-        if is_dB == True:
-            pad_value = -90
-        else:
-            pad_value = 0
-
-        pre_pad_length = int(lookback * 0.001 * sr)
-        post_pad_length = int(lookahead * 0.001 * sr)
-
-        channel, input_length = input.shape
-        peak = torch.zeros_like(input)
-
-        if (pre_pad_length + post_pad_length) == 0:
-            peak = input
-        else:
-            # Pad input with zeros to the nearest multiple of time*sr
-            input = torch.nn.functional.pad(
-                input,
-                (
-                    pre_pad_length,
-                    post_pad_length,
-                ),
-                "constant",
-                pad_value,
-            )
-
-            for i in range(channel):
-                for j in range(input_length):
-                    peak[i, j] = torch.max(
-                        input[i, j : j + pre_pad_length + post_pad_length]
-                    )
-
-        return peak
+        return np.max(input)
 
     def analog_prue(
         input,
-        sr=48000,
-        attack_time=1,
-        release_time=1,
-        attack_range_low=0.1,
-        attack_range_high=0.9,
-        release_range_low=0.1,
-        release_range_high=0.9,
-        multichannel=False,
+        output_old,
+        attack_coeff,
+        release_coeff,
     ):
         """
         Computes the peak value of an audio input. Analog Type.
         input: audio amplitude
-        sr: sample rate (Hz)
-        attack_time: attack time (ms)
-        release_time: release time (ms)
-        attack_range_low: attack control range low (0,1)
-        attack_range_high: attack control range high (0,1)
-        release_range_low: release control range low (0,1)
-        release_range_high: release control range high (0,1)
-        multichannel: True calculates peak value for each channel, False calculates peak value for all channels
+        output_old: peak value of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
         return: peak value
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
-
-        channel, input_length = input.shape
-        peak = torch.zeros_like(input)
-
-        attack_coeff = P.time_coefficient_computer(
-            attack_time, sr, attack_range_low, attack_range_high
-        )
-        release_coeff = P.time_coefficient_computer(
-            release_time, sr, release_range_low, release_range_high
+        output = release_coeff * output_old + (1 - attack_coeff) * max(
+            (input - output_old), 0
         )
 
-        if attack_coeff.dim() == 0:
-            attack_coeff = attack_coeff.unsqueeze(0)
-            attack_coeff = torch.nn.functional.pad(
-                attack_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                attack_coeff.item(),
-            )
-        if attack_coeff.dim() == 1:
-            attack_coeff = attack_coeff.unsqueeze(0)
+        return output
 
-        if release_coeff.dim() == 0:
-            release_coeff = release_coeff.unsqueeze(0)
-            release_coeff = torch.nn.functional.pad(
-                release_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                release_coeff.item(),
-            )
-        if release_coeff.dim() == 1:
-            release_coeff = release_coeff.unsqueeze(0)
+    def analog_level_corrected0(
+        input,
+        state_old,
+        attack_coeff,
+        release_coeff,
+    ):
+        """
+        Computes the peak value of an audio input in decoupled style. Analog Type.
+        input: audio amplitude
+        state_old: peak state of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
+        return: peak value, peak state
+        """
+        state = max(input, release_coeff * state_old)
+        peak = P.smoother(state, state_old, attack_coeff)
 
-        # Peak Detectors
-        for i in range(channel):
-            for j in range(1, input_length):
-                peak[i, j] = release_coeff[i, j] * peak[i, j - 1] + (
-                    1 - attack_coeff[i, j]
-                ) * max((input[i, j] - peak[i, j - 1]), 0)
+        return peak, state
+
+    def analog_level_corrected1(
+        input,
+        output_old,
+        attack_coeff,
+        release_coeff,
+    ):
+        """
+        Computes the peak value of an audio input in branch style. Analog Type.
+        input: audio amplitude
+        output_old: peak value of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
+        return: peak value
+        """
+        if input > output_old:
+            peak = attack_coeff * output_old + (1 - attack_coeff) * input
+        else:
+            peak = release_coeff * output_old
 
         return peak
 
-    def analog_level_corrected(
+    def analog_smooth0(
         input,
-        sr=48000,
-        attack_time=1,
-        release_time=1,
-        attack_range_low=0.1,
-        attack_range_high=0.9,
-        release_range_low=0.1,
-        release_range_high=0.9,
-        mode=1,
-        multichannel=False,
+        state_old,
+        attack_coeff,
+        release_coeff,
     ):
         """
-        Computes the peak value of an audio input. Analog Type.
+        Computes the peak value of an audio input in decoupled style. Analog Type.
         input: audio amplitude
-        sr: sample rate (Hz)
-        attack_time: attack time (ms)
-        release_time: release time (ms)
-        attack_range_low: attack control range low (0,1)
-        attack_range_high: attack control range high (0,1)
-        release_range_low: release control range low (0,1)
-        release_range_high: release control range high (0,1)
-        mode: 0 is decoupled style, 1 is branch style
-        multichannel: True calculates peak value for each channel, False calculates peak value for all channels
-        return: peak value
+        state_old: peak state of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
+        return: peak value, state
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
-
-        channel, input_length = input.shape
-        peak = torch.zeros_like(input)
-
-        attack_coeff = P.time_coefficient_computer(
-            attack_time, sr, attack_range_low, attack_range_high
+        state = max(
+            input,
+            release_coeff * state_old + (1 - release_coeff) * input,
         )
-        release_coeff = P.time_coefficient_computer(
-            release_time, sr, release_range_low, release_range_high
-        )
+        peak = P.smooth_filter(state, attack_coeff)
 
-        if attack_coeff.dim() == 0:
-            attack_coeff = attack_coeff.unsqueeze(0)
-            attack_coeff = torch.nn.functional.pad(
-                attack_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                attack_coeff.item(),
-            )
-        if attack_coeff.dim() == 1:
-            attack_coeff = attack_coeff.unsqueeze(0)
+        return peak, state
 
-        if release_coeff.dim() == 0:
-            release_coeff = release_coeff.unsqueeze(0)
-            release_coeff = torch.nn.functional.pad(
-                release_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                release_coeff.item(),
-            )
-        if release_coeff.dim() == 1:
-            release_coeff = release_coeff.unsqueeze(0)
-
-        if mode == 0:
-            peak_state = torch.zeros_like(input)
-            for i in range(channel):
-                for j in range(1, input_length):
-                    peak_state[i, j] = max(
-                        input[i, j], release_coeff[i, j] * peak_state[i, j - 1]
-                    )
-            peak = P.smooth_filter(peak_state, attack_coeff[i, j])
-
-        if mode == 1:
-            for i in range(channel):
-                for j in range(1, input_length):
-                    if input[i, j] > peak[i, j - 1]:
-                        peak[i, j] = (
-                            attack_coeff[i, j] * peak[i, j - 1]
-                            + (1 - attack_coeff[i, j]) * input[i, j]
-                        )
-
-                    else:
-                        peak[i, j] = release_coeff[i, j] * peak[i, j - 1]
-
-        return peak
-
-    def analog_smooth(
+    def analog_smooth0(
         input,
-        sr=48000,
-        attack_time=1,
-        release_time=1,
-        attack_range_low=0.1,
-        attack_range_high=0.9,
-        release_range_low=0.1,
-        release_range_high=0.9,
-        mode=1,
-        multichannel=False,
+        output_old,
+        attack_coeff,
+        release_coeff,
     ):
         """
-        Computes the peak value of an audio input. Analog Type.
+        Computes the peak value of an audio input in branch style. Analog Type.
         input: audio amplitude
-        sr: sample rate (Hz)
-        attack_time: attack time (ms)
-        release_time: release time (ms)
-        attack_range_low: attack control range low (0,1)
-        attack_range_high: attack control range high (0,1)
-        release_range_low: release control range low (0,1)
-        release_range_high: release control range high (0,1)
-        mode: 0 is decoupled style, 1 is branch style
-        multichannel: True calculates peak value for each channel, False calculates peak value for all channels
+        output_old: peak value of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
         return: peak value
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
-
-        channel, input_length = input.shape
-        peak = torch.zeros_like(input)
-
-        attack_coeff = P.time_coefficient_computer(
-            attack_time, sr, attack_range_low, attack_range_high
-        )
-        release_coeff = P.time_coefficient_computer(
-            release_time, sr, release_range_low, release_range_high
-        )
-
-        if attack_coeff.dim() == 0:
-            attack_coeff = attack_coeff.unsqueeze(0)
-            attack_coeff = torch.nn.functional.pad(
-                attack_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                attack_coeff.item(),
-            )
-        if attack_coeff.dim() == 1:
-            attack_coeff = attack_coeff.unsqueeze(0)
-
-        if release_coeff.dim() == 0:
-            release_coeff = release_coeff.unsqueeze(0)
-            release_coeff = torch.nn.functional.pad(
-                release_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                release_coeff.item(),
-            )
-        if release_coeff.dim() == 1:
-            release_coeff = release_coeff.unsqueeze(0)
-
-        if mode == 0:
-            peak_state = torch.zeros_like(input)
-            for i in range(channel):
-                for j in range(1, input_length):
-                    peak_state[i, j] = max(
-                        input[i, j],
-                        release_coeff[i, j] * peak_state[i, j - 1]
-                        + (1 - release_coeff[i, j]) * input[i, j],
-                    )
-            peak = P.smooth_filter(peak_state, attack_coeff[i, j])
-
-        if mode == 1:
-            for i in range(channel):
-                for j in range(1, input_length):
-                    if input[i, j] > peak[i, j - 1]:
-                        peak[i, j] = (
-                            attack_coeff[i, j] * peak[i, j - 1]
-                            + (1 - attack_coeff[i, j]) * input[i, j]
-                        )
-
-                    else:
-                        peak[i, j] = (
-                            release_coeff[i, j] * peak[i, j - 1]
-                            + (1 - release_coeff[i, j]) * input[i, j]
-                        )
+        if input > output_old:
+            peak = attack_coeff * output_old + (1 - attack_coeff) * input
+        else:
+            peak = release_coeff * output_old + (1 - release_coeff) * input
 
         return peak
 
 
 class RMS:
-    def digital(
-        input,
-        sr=48000,
-        lookback=1,
-        lookahead=1,
-        is_dB=False,
-        multichannel=False,
-    ):
+    def digital(input):
         """
         Computes the root mean square (RMS) of an audio input. Digital Type
         input: audio amplitude
-        sr: sample rate (Hz)
-        lookback: RMS pre window (ms)
-        lookahead: RMS post window (ms)
-        is_dB: Effecting pad_value. True calculates RMS value in dB, False calculates RMS value in amplitude.
-        multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
         return: RMS value
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
 
-        if is_dB == True:
-            pad_value = -90
-        else:
-            pad_value = 0
-
-        pre_pad_length = int(lookback * 0.001 * sr)
-        post_pad_length = int(lookahead * 0.001 * sr)
-
-        channel, input_length = input.shape
-        RMS = torch.zeros_like(input)
-
-        # Pad input with zeros to the nearest multiple of time*sr
-        input = torch.nn.functional.pad(
-            input,
-            (
-                pre_pad_length,
-                post_pad_length,
-            ),
-            "constant",
-            pad_value,
-        )
-
-        for i in range(channel):
-            for j in range(input_length):
-                RMS[i, j] = torch.sqrt(
-                    torch.mean(
-                        torch.square(input[i, j : j + pre_pad_length + post_pad_length])
-                    )
-                )
-
-        return RMS
+        return np.sqrt(np.mean(np.square(input)))
 
     def analog_prue(
         input,
-        sr=48000,
-        time=1,
-        range_low=0.1,
-        range_high=0.9,
-        multichannel=False,
+        output_old,
+        coeff,
     ):
         """
         Computes the root mean square (RMS) of an audio input. Analog Type
         input: audio amplitude
-        sr: sample rate (Hz)
-        time: attack time (ms)
-        range_low: time control range low (0,1)
-        range_high: time control range high (0,1)
-        multichannel: True calculates RMS value for each channel, False calculates RMS value for all channels
+        output_old: RMS value of the last sample
         return: RMS value
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
+        output = P.smoother(input**2, output_old**2, coeff)
+        output = output**0.5
 
-        coeff = P.time_coefficient_computer(time, sr, range_low, range_high)
+        return output
 
-        input = torch.square(input)
-
-        RMS = P.smooth_filter(input, coeff)
-        RMS = torch.sqrt(RMS)
-
-        return RMS
-
-    def analog_level_corrected(
+    def analog_level_corrected0(
         input,
-        sr=48000,
-        attack_time=1,
-        release_time=1,
-        attack_range_low=0.1,
-        attack_range_high=0.9,
-        release_range_low=0.1,
-        release_range_high=0.9,
-        mode=1,
-        multichannel=False,
+        state_old,
+        output_old,
+        attack_coeff,
+        release_coeff,
     ):
         """
-        Computes the root mean square (RMS) of an audio input. Analog Type
+        Computes the root mean square (RMS) of an audio input in decoupled style. Analog Type
         input: audio amplitude
-        sr: sample rate (Hz)
-        attack_time: attack time (ms)
-        release_time: release time (ms)
-        attack_range_low: attack control range low (0,1)
-        attack_range_high: attack control range high (0,1)
-        release_range_low: release control range low (0,1)
-        release_range_high: release control range high (0,1)
-        mode: 0 is decoupled style, 1 is branch style
-        multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
+        state_old: RMS state of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
         return: RMS value
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
+        state = (input**2 + (release_coeff * state_old) ** 2) / 2
+        state = state**0.5
 
-        channel, input_length = input.shape
-        RMS = torch.zeros_like(input)
+        output = attack_coeff * output_old + (1 - attack_coeff) * state
 
-        attack_coeff = P.time_coefficient_computer(
-            attack_time, sr, attack_range_low, attack_range_high
-        )
-        release_coeff = P.time_coefficient_computer(
-            release_time, sr, release_range_low, release_range_high
-        )
+        return output, state
 
-        if attack_coeff.dim() == 0:
-            attack_coeff = attack_coeff.unsqueeze(0)
-            attack_coeff = torch.nn.functional.pad(
-                attack_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                attack_coeff.item(),
-            )
-        if attack_coeff.dim() == 1:
-            attack_coeff = attack_coeff.unsqueeze(0)
-
-        if release_coeff.dim() == 0:
-            release_coeff = release_coeff.unsqueeze(0)
-            release_coeff = torch.nn.functional.pad(
-                release_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                release_coeff.item(),
-            )
-        if release_coeff.dim() == 1:
-            release_coeff = release_coeff.unsqueeze(0)
-
-        if mode == 0:
-            RMS_state = torch.zeros_like(input)
-
-            for i in range(channel):
-                for j in range(1, input_length):
-                    RMS_state[i, j] = (
-                        input[i, j] ** 2
-                        + (release_coeff[i, j] * RMS_state[i, j - 1]) ** 2
-                    ) / 2
-                    RMS_state[i, j] = RMS_state[i, j] ** 0.5
-
-                    RMS[i, j] = (
-                        attack_coeff[i, j] * RMS[i, j - 1]
-                        + (1 - attack_coeff[i, j]) * RMS_state[i, j]
-                    )
-
-        if mode == 1:
-            input = torch.square(input)
-
-            for i in range(channel):
-                for j in range(1, input_length):
-                    if input[i, j] > RMS[i, j - 1]:
-                        RMS[i, j] = (
-                            attack_coeff[i, j] * RMS[i, j - 1]
-                            + (1 - attack_coeff[i, j]) * input[i, j]
-                        )
-
-                    else:
-                        RMS[i, j] = release_coeff[i, j] * RMS[i, j - 1]
-
-            RMS = torch.sqrt(RMS)
-
-        return RMS
-
-    def analog_smooth(
+    def analog_level_corrected1(
         input,
-        sr=48000,
-        attack_time=1,
-        release_time=1,
-        attack_range_low=0.1,
-        attack_range_high=0.9,
-        release_range_low=0.1,
-        release_range_high=0.9,
-        mode=1,
-        multichannel=False,
+        output_old,
+        attack_coeff=1,
+        release_coeff=1,
     ):
         """
-        Computes the RMS value of an audio input. Analog Type.
+        Computes the root mean square (RMS) of an audio input in branch style. Analog Type
         input: audio amplitude
-        sr: sample rate (Hz)
-        attack_time: attack time (ms)
-        release_time: release time (ms)
-        attack_range_low: attack control range low (0,1)
-        attack_range_high: attack control range high (0,1)
-        release_range_low: release control range low (0,1)
-        release_range_high: release control range high (0,1)
-        mode: 0 is decoupled style, 1 is branch style
-        multichannel: True calculates RMS value for each channel, False calculates peak value for all channels
+        output_old: RMS value of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
         return: RMS value
         """
-        if (multichannel == False) & (input.size(0) > 1):
-            input = P.to_mono(input)
+        if input > output_old:
+            output = attack_coeff * output_old**2 + (1 - attack_coeff) * input**2
+        else:
+            output = release_coeff * output_old**2
 
-        channel, input_length = input.shape
-        RMS = torch.zeros_like(input)
+        output = output**0.5
 
-        attack_coeff = P.time_coefficient_computer(
-            attack_time, sr, attack_range_low, attack_range_high
-        )
-        release_coeff = P.time_coefficient_computer(
-            release_time, sr, release_range_low, release_range_high
-        )
+        return output
 
-        if attack_coeff.dim() == 0:
-            attack_coeff = attack_coeff.unsqueeze(0)
-            attack_coeff = torch.nn.functional.pad(
-                attack_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                attack_coeff.item(),
-            )
-        if attack_coeff.dim() == 1:
-            attack_coeff = attack_coeff.unsqueeze(0)
+    def analog_smooth0(
+        input,
+        state_old,
+        attack_coeff,
+        release_coeff,
+    ):
+        """
+        Computes the RMS value of an audio input in decoupled style. Analog Type.
+        input: audio amplitude
+        state_old: RMS state of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
+        return: RMS value, state
+        """
+        state = (
+            input**2 + (release_coeff * state_old + (1 - release_coeff) * input) ** 2
+        ) / 2
+        state = state**0.5
 
-        if release_coeff.dim() == 0:
-            release_coeff = release_coeff.unsqueeze(0)
-            release_coeff = torch.nn.functional.pad(
-                release_coeff,
-                (
-                    0,
-                    input_length - 1,
-                ),
-                "constant",
-                release_coeff.item(),
-            )
-        if release_coeff.dim() == 1:
-            release_coeff = release_coeff.unsqueeze(0)
+        output = attack_coeff * output + (1 - attack_coeff) * state
 
-        if mode == 0:
-            RMS_state = torch.zeros_like(input)
+        return output, state
 
-            for i in range(channel):
-                for j in range(1, input_length):
-                    RMS_state[i, j] = (
-                        input[i, j] ** 2
-                        + (
-                            release_coeff[i, j] * RMS_state[i, j - 1]
-                            + (1 - release_coeff[i, j]) * input[i, j]
-                        )
-                        ** 2
-                    ) / 2
-                    RMS_state[i, j] = RMS_state[i, j] ** 0.5
+    def analog_smooth1(
+        input,
+        output_old,
+        attack_coeff,
+        release_coeff,
+    ):
+        """
+        Computes the RMS value of an audio input in branch style. Analog Type.
+        input: audio amplitude
+        output_old: RMS value of the last sample
+        attack_coeff: attack coefficient
+        release_coeff: release coefficient
+        return: RMS value
+        """
+        if input > output_old:
+            output = attack_coeff * output_old**2 + (1 - attack_coeff) * input**2
 
-                    RMS[i, j] = (
-                        attack_coeff[i, j] * RMS[i, j - 1]
-                        + (1 - attack_coeff[i, j]) * RMS_state[i, j]
-                    )
+        else:
+            output = release_coeff * output_old**2 + (1 - release_coeff) * input**2
 
-        if mode == 1:
-            input = torch.square(input)
+        output = output**0.5
 
-            for i in range(channel):
-                for j in range(1, input_length):
-                    if input[i, j] > RMS[i, j - 1]:
-                        RMS[i, j] = (
-                            attack_coeff[i, j] * RMS[i, j - 1]
-                            + (1 - attack_coeff[i, j]) * input[i, j]
-                        )
-
-                    else:
-                        RMS[i, j] = (
-                            release_coeff[i, j] * RMS[i, j - 1]
-                            + (1 - release_coeff[i, j]) * input[i, j]
-                        )
-
-            RMS = torch.sqrt(RMS)
-
-        return RMS
+        return output
 
 
 class drc_time:
@@ -638,7 +261,7 @@ class drc_time:
         stage1 = P.generate_signal(freq, sr, amplitude1, length1)
         stage2 = P.generate_signal(freq, sr, amplitude2, length2)
         stage3 = P.generate_signal(freq, sr, amplitude3, length3)
-        signal = torch.cat((stage1, stage2, stage3), 1)
+        signal = np.hstack((stage1, stage2, stage3))
         return signal
 
     def time_extract(test, result, sr=96000):
@@ -649,18 +272,23 @@ class drc_time:
         sr: sample rate of the signal (hz)
         return: time featrue
         """
-        result = torch.abs(result[0, :])
-        test = torch.abs(test[0, :])
+        result = np.abs(result[0, :])
+        test = np.abs(test[0, :])
 
-        result = peak.digital(result, sr, 20, 0)
-        test = peak.digital(test, sr, 20, 0)
+        for i in range(result.size(0)):
+            if i < (0.02 * sr):
+                result[i] = peak.digital(result[0, :i])
+                test = peak.digital(test[0, :i])
+            else:
+                result = peak.digital(result[0, i - int(0.02 * sr) : i])
+                test = peak.digital(test[0, i - int(0.02 * sr) : i])
 
         gain = result / test
 
         gain[0, 0:100] = 1
-        gain = torch.where(torch.isnan(gain), torch.tensor(3.1623e-05), gain)
+        gain = np.where(np.isnan(gain), np.tensor(3.1623e-05), gain)
 
-        gain = F.amplitude_to_DB(gain, 20, 0, 0, 90)
+        gain = amp2dB(gain)
         return gain
 
 
@@ -672,15 +300,15 @@ class drc_ratio:
         sr: sample rate of the signal (hz)
         return: signal
         """
-        stage = torch.zeros(91, sr * 5)
-        signal = torch.zeros(1)
+        stage = np.zeros(91, sr * 5)
+        signal = np.zeros(1)
         for i in range(91):
-            amp = F.DB_to_amplitude(torch.tensor(i - 90), 1, 0.5)
+            amp = dB2amp(i - 90)
             stage_stage = P.generate_signal(freq, sr, amp, 5)
             stage[i, :] = stage_stage[0, :]
-            signal = torch.cat((signal, stage[i, :]), 0)
+            signal = np.vstack(signal, stage[i, :])
         signal = signal[1:]
-        signal = signal.unsqueeze(0)
+        signal = signal[np.newaxis, :]
 
         return signal
 
@@ -691,23 +319,48 @@ class drc_ratio:
         sr: sample rate of the signal (hz)
         return: ratio feature
         """
-        output = torch.zeros(91)
+        output = np.zeros(91)
         ratiotest = ratiotest[0, :]
 
         # 先选取每个阶段的最后0.15s，因为前面没意义，同时为peak计算节省运算量
-        ratiotest_stage = torch.zeros(1)
+        ratiotest_stage = np.zeros(1)
         for i in range(91):
             stage = ratiotest[int(i * sr * 5 + sr * 4.85) : (i + 1) * sr * 5]
-            ratiotest_stage = torch.cat((ratiotest_stage, stage), 0)
+            ratiotest_stage = np.vstack(ratiotest_stage, stage)
         ratiotest = ratiotest_stage[1:]
 
-        ratiotest = peak.digital(ratiotest, sr, 20, 0)
-        ratiotest = ratiotest[0, :]
+        for i in range(ratiotest.size(0)):
+            if i < (0.02 * sr):
+                ratiotest[i] = peak.digital(ratiotest[0, :i])
+            else:
+                ratiotest[i] = peak.digital(ratiotest[0, i - int(0.02 * sr) : i])
 
         for i in range(91):
             # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
             stage = ratiotest[int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)]
             stage = min(stage)
             output[i] = stage
-        output = output.unsqueeze(0)
+
+        output = output[np.newaxis, :]
+
         return output
+
+
+def amp2dB(input):
+    """
+    Convert amplitude to dB
+    input: audio amplitude
+    return: audio dB [-90,+∞)
+    """
+    output = 20 * np.log10(input + 3.1623e-05)
+    return output
+
+
+def dB2amp(input):
+    """
+    Convert dB to amplitude
+    input: audio dB
+    return: audio amplitude
+    """
+    output = 10 ** (input / 20)
+    return output

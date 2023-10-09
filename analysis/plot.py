@@ -6,6 +6,7 @@ import torch.utils.tensorboard as tb
 import torch
 import numpy as np
 from scipy import signal
+import math
 
 
 def waveform(
@@ -23,10 +24,8 @@ def waveform(
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
     """
-    input = input.numpy()
-
     num_channels, num_frames = input.shape
-    time_axis = torch.arange(0, num_frames) / sample_rate
+    time_axis = np.arange(0, num_frames) / sample_rate
 
     figure, axes = plt.subplots(num_channels, 1)
     if num_channels == 1:
@@ -62,6 +61,14 @@ def specgram(
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
     """
+    # 检查是否有可用的 GPU 设备
+    if torch.cuda.is_available():
+        # 设置默认的 GPU 设备为 GPU 0
+        device = torch.device("cuda:0")
+    else:
+        device = torch.device("cpu")
+    # 将 tensor 移动到设备 device 上
+    input = torch.tensor(input, device=device)
     specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(input)
     specgram_db = F.amplitude_to_DB(specgram, 20, 0, 0, 90)
 
@@ -111,12 +118,10 @@ def fvtool(
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
     """
-    b = b.numpy()
-    if isinstance(a, torch.Tensor):
-        a = a.numpy()
-        worN = 8192
-    else:
+    if a == 1:
         worN = len(b)
+    else:
+        worN = 8192
 
     w, h = signal.freqz(b, a, worN=worN, fs=sample_rate)
     fig, (ax1, ax2) = plt.subplots(2, 1)

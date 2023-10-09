@@ -39,6 +39,12 @@ sys.path.append("/your/audiotools/path")
 # 当然, 也可以使用相对路径
 ```
 
+**注意**：
+
+本库中所有的音频处理方法都是一个点一个点的进行的, 如果对于超大数组的一次性处理 (如48/24规格超过10s的音频), 可以考虑使用torchaudio中的方法, 如: amp和dB的相互转换, 滤波器等.
+
+分析类的方法输入输出格式都是 [通道, 数据]
+
 # 版本号定义
 
 稳定性.新py文件.新方法的加入.日常维护和bug修正
@@ -49,17 +55,11 @@ sys.path.append("/your/audiotools/path")
 
     t：过程版本, 有大量未解决的问题, 不可正常使用
 
-# 规定
-
-1. 输入输出都使用tensor, 格式为[ 通道, 数据 ], 推荐使用torchaudio读取
-2. 所有方法都设计为一次处理一整个音频, 而非一个点一个点的处理
-3. 所有方法都应该尽量支持多声道处理
-
 # 各个py文件说明
 
-process：各种处理方法
+process：各种处理方法. 
 
-analysis：分析绘图&特征提取
+analysis：分析绘图&特征提取.
 
 # 常见问题
 
@@ -73,7 +73,21 @@ sudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-
 
 这里使用savefig解决
 
-## 将数据放在gpu上运行的方法：
+
+## 使用line_profiler进行性能分析
+
+```
+# 把下行代码加入到需要测试的函数上
+@profile
+def profile():
+    pass
+# 进入终端，进行测试 
+kernprof -l profile.py
+# 读取测试结果
+python -m line_profiler profile.py.lprof
+```
+
+## 使用torch时将数据放在gpu上运行的方法：
 
 ``````
 # 检查是否有可用的 GPU 设备
@@ -88,7 +102,7 @@ test = test.to(device)
 
 ## 将数据以float64计算的方法:
 
-在主函数的开头加入
+大部分时候我们使用numpy进行的计算, 默认是64位, 无需修改. 如需使用pytorch的64位, 则在主函数的开头加入:
 
 ```
 torch.set_default_dtype(torch.float64)

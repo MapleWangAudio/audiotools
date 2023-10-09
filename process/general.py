@@ -1,9 +1,8 @@
-import torch
-import torchaudio.functional as F
 import numpy as np
 import math
 
 
+# todo：生成噪音信号
 def generate_signal(freq, sr, amplitude, length, mode=0):
     """
     Generate a signal
@@ -14,19 +13,19 @@ def generate_signal(freq, sr, amplitude, length, mode=0):
     mode: 0: sine wave, 1: square wave, 2: triangle wave
     return: signal
     """
-    t = torch.linspace(0, length, int(sr * length))
+    t = np.linspace(0, length, int(sr * length))
     if mode == 0:
-        signal = amplitude * torch.sin(2 * torch.pi * freq * t)
+        signal = amplitude * np.sin(2 * np.pi * freq * t)
     if mode == 1:
-        signal = amplitude * torch.sign(torch.sin(2 * torch.pi * freq * t))
+        signal = amplitude * np.sign(np.sin(2 * np.pi * freq * t))
     if mode == 2:
-        signal = amplitude * (2 / torch.pi) * torch.atan(torch.tan(torch.pi * freq * t))
+        signal = amplitude * (2 / np.pi) * np.atan(np.tan(np.pi * freq * t))
 
-    signal = signal.unsqueeze(0)
+    signal = signal[np.newaxis, :]
     return signal
 
 
-def time_coefficient_computer(
+def time_coeff_computer(
     time,
     sample_rate=48000,
     range_low=0.1,
@@ -41,56 +40,28 @@ def time_coefficient_computer(
     return: time coefficient
     """
     shape_control = math.log((1 - range_low) / (1 - range_high))
-    shape_control = torch.tensor(shape_control)
     shape_control *= -1
 
-    return torch.exp(shape_control / (time * 0.001 * sample_rate))
+    return math.exp(shape_control / (time * 0.001 * sample_rate))
 
 
-def smooth_filter(
+def smoother(
     input,
-    coeff=time_coefficient_computer(1),
-    order=1,
+    old,
+    coeff=time_coeff_computer(1),
 ):
     """
     Filter to smooth something
     input: audio amplitude
     coeff: time coefficient
-    order: 1: first order filter, 2: second order filter
     return: smoothed input
     """
-    if order == 1:
-        channel, length = input.shape
-        output = torch.zeros_like(input)
-
-        if coeff.dim() == 0:
-            for i in range(channel):
-                for j in range(1, length):
-                    output[i, j] = coeff * output[i, j - 1] + (1 - coeff) * input[i, j]
-        else:
-            for i in range(channel):
-                for j in range(1, length):
-                    output[i, j] = (
-                        coeff[i, j] * output[i, j - 1] + (1 - coeff[i, j]) * input[i, j]
-                    )
-
-    # todo: 让order2也可以接受数组
-    if order == 2:
-        b = torch.zeros(3)
-        a = torch.zeros(3)
-        b[0] = (1 - coeff) * (1 - coeff)
-        b[1] = 0
-        b[2] = 0
-        a[0] = 1
-        a[1] = -2 * coeff
-        a[2] = coeff**2
-
-        output = F.biquad(input, b[0], b[1], b[2], a[0], a[1], a[2])
+    output = coeff * old + (1 - coeff) * input
 
     return output
 
 
-def to_mono(input):
+def mono(input):
     """
     Convert multichannel audio to mono audio
     input: audio amplitude
@@ -101,7 +72,7 @@ def to_mono(input):
         for i in range(0, input.size(0)):
             input_all = input_all + input[i, :]
         input_mono = input_all / input.size(0)
-        output = input_mono.unsqueeze(0)
+        output = input_mono[np.newaxis, :]
     else:
         output = input
 
@@ -123,10 +94,8 @@ def delete(
     all: True: process the whole input, False: only process the beginning and the end of the input
     return: processed input
     """
-    input_copy = input.numpy()
-    input_mono = to_mono(input)
+    input_mono = mono(input)
     input_mono = input_mono[0, :]
-    input_mono = input_mono.numpy()
 
     if all == False:
         i = 0
@@ -207,4 +176,4 @@ def delete(
                     i -= 1
             i += 1
 
-    return torch.tensor(input_copy)
+    return input_copy
