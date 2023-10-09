@@ -3,7 +3,13 @@ import math
 
 
 # todo：生成噪音信号
-def generate_signal(freq, sr, amplitude, length, mode=0):
+def generate_signal(
+    freq,
+    sr,
+    amplitude,
+    length,
+    mode=0,
+):
     """
     Generate a signal
     freq: frequency (Hz)
@@ -14,35 +20,38 @@ def generate_signal(freq, sr, amplitude, length, mode=0):
     return: signal
     """
     t = np.linspace(0, length, int(sr * length))
-    if mode == 0:
-        signal = amplitude * np.sin(2 * np.pi * freq * t)
-    if mode == 1:
-        signal = amplitude * np.sign(np.sin(2 * np.pi * freq * t))
-    if mode == 2:
-        signal = amplitude * (2 / np.pi) * np.atan(np.tan(np.pi * freq * t))
 
-    signal = signal[np.newaxis, :]
-    return signal
+    if mode == 0:
+        output = amplitude * np.sin(2 * np.pi * freq * t)
+    if mode == 1:
+        output = amplitude * np.sign(np.sin(2 * np.pi * freq * t))
+    if mode == 2:
+        output = amplitude * (2 / np.pi) * np.atan(np.tan(np.pi * freq * t))
+
+    output = output[np.newaxis, :]
+
+    return output
 
 
 def time_coeff_computer(
     time,
-    sample_rate=48000,
+    sr=48000,
     range_low=0.1,
     range_high=0.9,
 ):
     """
     Compute time coefficient for smooth filter
     time: smooth time (ms)
-    sample_rate: sample rate (Hz)
+    sr: sample rate (Hz)
     range_low: lower limit of time coefficient control range (0,1)
     range_high: upper limit of time coefficient control range (0,1)
     return: time coefficient
     """
     shape_control = math.log((1 - range_low) / (1 - range_high))
     shape_control *= -1
+    output = math.exp(shape_control / (time * 0.001 * sr))
 
-    return math.exp(shape_control / (time * 0.001 * sample_rate))
+    return output
 
 
 def smoother(
@@ -56,9 +65,7 @@ def smoother(
     coeff: time coefficient
     return: smoothed input
     """
-    output = coeff * old + (1 - coeff) * input
-
-    return output
+    return coeff * old + (1 - coeff) * input
 
 
 def mono(input):
@@ -176,4 +183,6 @@ def delete(
                     i -= 1
             i += 1
 
-    return input_copy
+    output = input_copy
+
+    return output

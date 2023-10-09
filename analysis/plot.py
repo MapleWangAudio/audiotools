@@ -6,12 +6,11 @@ import torch.utils.tensorboard as tb
 import torch
 import numpy as np
 from scipy import signal
-import math
 
 
 def waveform(
     input,
-    sample_rate=48000,
+    sr=48000,
     end=False,
     name="waveform.png",
     save=True,
@@ -19,13 +18,13 @@ def waveform(
     """
     Plots the waveform of an audio data.
     input: audio amplitude
-    sample_rate: sample rate (Hz)
+    sr: sample rate (Hz)
     end: the last plot must be set to True, otherwise the plot will not be displayed
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
     """
     num_channels, num_frames = input.shape
-    time_axis = np.arange(0, num_frames) / sample_rate
+    time_axis = np.arange(0, num_frames) / sr
 
     figure, axes = plt.subplots(num_channels, 1)
     if num_channels == 1:
@@ -48,7 +47,7 @@ def waveform(
 
 def specgram(
     input,
-    sample_rate=48000,
+    sr=48000,
     end=False,
     name="specgram.png",
     save=True,
@@ -56,7 +55,7 @@ def specgram(
     """
     Plots the spectrogram of an audio data.
     input: audio amplitude
-    sample_rate: sample rate (Hz)
+    sr: sample rate (Hz)
     end: the last plot must be set to True, otherwise the plot will not be displayed
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
@@ -69,11 +68,11 @@ def specgram(
         device = torch.device("cpu")
     # 将 tensor 移动到设备 device 上
     input = torch.tensor(input, device=device)
-    specgram = torchaudio.transforms.Spectrogram(n_fft=int(sample_rate / 100))(input)
+    specgram = torchaudio.transforms.Spectrogram(n_fft=int(sr / 100))(input)
     specgram_db = F.amplitude_to_DB(specgram, 20, 0, 0, 90)
 
     num_channels, num_frames = input.shape
-    time_axis = num_frames / sample_rate
+    time_axis = num_frames / sr
 
     fig, axs = plt.subplots(num_channels, 1)
     if num_channels == 1:
@@ -84,7 +83,7 @@ def specgram(
             specgram_db[c, :, :],
             origin="lower",
             aspect="auto",
-            extent=[0, time_axis, 30, sample_rate / 2],
+            extent=[0, time_axis, 30, sr / 2],
         )
         fig.colorbar(im, ax=axs[c])
         axs[c].set_yscale("symlog")
@@ -104,7 +103,7 @@ def specgram(
 def fvtool(
     b,
     a=1,
-    sample_rate=48000,
+    sr=48000,
     end=False,
     name="fvtool.png",
     save=True,
@@ -113,7 +112,7 @@ def fvtool(
     Emulates the functionality of MATLAB's fvtool function.Calculates and plots the frequency response of a filter.
     b: numerator coefficients of the filter
     a: denominator coefficients of the filter
-    sample_rate: sample rate (Hz)
+    sr: sample rate (Hz)
     end: the last plot must be set to True, otherwise the plot will not be displayed
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
@@ -123,7 +122,7 @@ def fvtool(
     else:
         worN = 8192
 
-    w, h = signal.freqz(b, a, worN=worN, fs=sample_rate)
+    w, h = signal.freqz(b, a, worN=worN, fs=sr)
     fig, (ax1, ax2) = plt.subplots(2, 1)
     ax1.plot(w, 20 * np.log10(abs(h)))
     ax1.set_xscale("log")

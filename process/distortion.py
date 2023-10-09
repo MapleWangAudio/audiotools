@@ -20,6 +20,7 @@ def exp(
     downLimit: the limit of the negative nonlinear
     upCurve: the curve of the positive nonlinear
     downCurve: the curve of the negative nonlinear
+    return: distorted audio amplitude
     """
     input *= gain
 
@@ -76,7 +77,7 @@ def clip(
     nega_knee=0,
 ):
     """
-    mono in mono out
+    Clip type nonlinear
     input: audio amplitude
     posi_limit: the value of the limit of the positive input,[0,+∞)
     nega_limit: the value of the limit of the negative input,[0,+∞)
@@ -84,6 +85,7 @@ def clip(
     nega_one_over_ratio: 1/ratio of the negative input,[0,+∞)
     posi_knee: the value of the posi knee,[0,+∞)
     nega_knee: the value of the nega knee,[0,+∞)
+    return: distorted audio amplitude
     """
     if input > 0:
         if input > (posi_limit + posi_knee / 2):
