@@ -8,6 +8,8 @@ from .general import (
     smoother,
     mono,
     delete,
+    amp2dB,
+    dB2amp,
 )
 
 __all__ = [
@@ -19,4 +21,6 @@ __all__ = [
     "smoother",
     "mono",
     "delete",
+    "amp2dB",
+    "dB2amp",
 ]

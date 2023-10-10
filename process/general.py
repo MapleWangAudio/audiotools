@@ -186,3 +186,21 @@ def delete(
     output = input_copy
 
     return output
+
+
+def amp2dB(input):
+    """
+    Convert amplitude to dB
+    input: audio amplitude
+    return: audio dB [-90,+∞)
+    """
+    return 20 * np.log10(input + 3.1623e-05)
+
+
+def dB2amp(input):
+    """
+    Convert dB to amplitude
+    input: audio dB
+    return: audio amplitude
+    """
+    return 10 ** (input / 20)

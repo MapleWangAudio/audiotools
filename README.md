@@ -102,12 +102,21 @@ else:
 test = test.to(device)
 ``````
 
-## 将tensor以float64计算的方法:
+## 以float64计算的方法:
 
-对音频处理, float32不太够用, 尽量使用float64. 大部分时候我们使用numpy进行的计算, 默认是64位, 无需修改. 如需使用pytorch的64位, 则在主函数的开头加入:
+对音频处理, float32不太够用, 同时float64时numpy的计算会更快, 所以尽量使用float64.
+
+如需在神经网络中使用64bit, 则在主函数的开头加入:
 
 ```
 torch.set_default_dtype(torch.float64)
 ```
 
-这将使得所有的tensor都以64位进行计算, 但是会降低计算速度, 请谨慎使用.
+这将全局指定tensor的精度为float64, 使得所有的tensor都以64位进行计算.
+
+但对于torchaudio的读取, 由于其本身的限制, 即算使用了上述代码全局指定了精度, 仍无法读取为64bit, 只能使用32bit, 这会导致后继所有的基于input初始化的数据都为32bit. 所以我们可以显式的指定读取的格式为64bit:
+
+``` 
+input, sr = torchaudio.load(input_path)
+input = input.double()
+```

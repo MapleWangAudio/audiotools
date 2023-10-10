@@ -270,20 +270,21 @@ class drc_time:
         result = np.abs(result[0, :])
         test = np.abs(test[0, :])
 
-        for i in range(result.size(0)):
-            if i < (0.02 * sr):
-                result[i] = peak.digital(result[0, :i])
-                test = peak.digital(test[0, :i])
-            else:
-                result = peak.digital(result[0, i - int(0.02 * sr) : i])
-                test = peak.digital(test[0, i - int(0.02 * sr) : i])
+        result_peak = np.zeros_like(result)
+        test_peak = np.zeros_like(test)
+        for i in range(int(0.02 * sr)):
+            result_peak[0, i] = peak.digital(result[0, 0 : i + 1])
+            test_peak[0, i] = peak.digital(test[0, 0 : i + 1])
+        for i in range(int(0.02 * sr), result.size(0)):
+            result_peak[0, i] = peak.digital(result[0, int(i - 0.02 * sr) : i])
+            test_peak[0, i] = peak.digital(test[0, int(i - 0.02 * sr) : i])
 
         gain = result / test
 
         gain[0, 0:100] = 1
         gain = np.where(np.isnan(gain), np.tensor(3.1623e-05), gain)
 
-        gain = amp2dB(gain)
+        gain = process.amp2dB(gain)
         return gain
 
 
@@ -298,7 +299,7 @@ class drc_ratio:
         stage = np.zeros(91, sr * 5)
         signal = np.zeros(1)
         for i in range(91):
-            amp = dB2amp(i - 90)
+            amp = process.dB2amp(i - 90)
             stage_stage = process.generate_signal(freq, sr, amp, 5)
             stage[i, :] = stage_stage[0, :]
             signal = np.vstack((signal, stage[i, :]))
@@ -320,40 +321,24 @@ class drc_ratio:
         # 先选取每个阶段的最后0.15s，因为前面没意义，同时为peak计算节省运算量
         ratiotest_stage = np.zeros(1)
         for i in range(91):
-            stage = ratiotest[int(i * sr * 5 + sr * 4.85) : (i + 1) * sr * 5]
+            stage = ratiotest[int(i * sr * 5 + sr * 4.85) : int((i + 1) * sr * 5)]
             ratiotest_stage = np.vstack((ratiotest_stage, stage))
         ratiotest = ratiotest_stage[1:]
 
-        for i in range(ratiotest.size(0)):
-            if i < (0.02 * sr):
-                ratiotest[i] = peak.digital(ratiotest[0, :i])
-            else:
-                ratiotest[i] = peak.digital(ratiotest[0, i - int(0.02 * sr) : i])
+        ratiotest_peak = np.zeros_like(ratiotest)
+        for i in range(int(0.02 * sr)):
+            ratiotest_peak[i] = peak.digital(ratiotest[0 : i + 1])
+        for i in range(int(0.02 * sr), ratiotest.size(0)):
+            ratiotest_peak[i] = peak.digital(ratiotest[int(i - 0.02 * sr) : i])
 
         for i in range(91):
             # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
-            stage = ratiotest[int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)]
+            stage = ratiotest_peak[
+                int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)
+            ]
             stage = min(stage)
             output[i] = stage
 
         output = output[np.newaxis, :]
 
         return output
-
-
-def amp2dB(input):
-    """
-    Convert amplitude to dB
-    input: audio amplitude
-    return: audio dB [-90,+∞)
-    """
-    return 20 * np.log10(input + 3.1623e-05)
-
-
-def dB2amp(input):
-    """
-    Convert dB to amplitude
-    input: audio dB
-    return: audio amplitude
-    """
-    return 10 ** (input / 20)
