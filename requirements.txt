@@ -4,3 +4,7 @@ matplotlib
 scipy
 tensorboard
 librosa
+tqdm
+pandas
+ipykernel
+line_profiler

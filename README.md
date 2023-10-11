@@ -1,8 +1,36 @@
+# 介绍
+
+音频效果研究中, 常规的语音库并不能很好的进行相关研究, 所以构建了本库, 作为常见音频库的补充, 以便于相关研究.
+
+大多数情况下, 我们以以下的原则进行使用:
+
+    1. 使用torchaudio进行读取
+
+    2. 实时处理时, 优先使用本库方法
+
+    3. 离线处理时, 优先使用torchaudio方法
+
+    4. 对于本库和torchaudio没有的方法, 使用librosa
+
+# 项目结构
+
+process：各种处理方法. 输入输出为一个点
+
+analysis：分析绘图&特征提取. 输入输出为一个点或一个数组, 数组格式为[通道, 数据]
+
+# 版本号定义
+
+稳定性.新py文件.新方法的加入.日常维护和bug修正
+
+稳定性解释：
+
+    v：正式版本, 不出意外的话, 稳定可用
+
+    t：过程版本, 有大量未解决的问题, 不可正常使用
+
 # 安装
 
-先自行根据自己设备情况安装相对应的pytorch（本项目基于python3.10, pytorch2.0进行的构建, 其他版本请自行检查兼容性）
-
-然后
+使用:
 
 ```
 pip install -r requirements.txt
@@ -14,19 +42,12 @@ pip install -r requirements.txt
 conda install -c pytorch -c defaults -c conda-forge --file requirements.txt
 ```
 
-requirements_extra.txt中有一些常用的额外的库, 可以选择性安装。当然, 不安装extra也能正常使用本库
-
-```
-conda install --file requirements_extra.txt
-```
-
 # 使用方法
 
 放在工程目录下, 与main.py同级, 然后
 
 ```
-import audiotools.analysis as analysis
-import audiotools.process as process
+from audiotools import *
 ```
 
 不同级的话, 需要在上列代码之前额外添加如下代码
@@ -39,27 +60,25 @@ sys.path.append("/your/audiotools/path")
 # 当然, 也可以使用相对路径
 ```
 
-**注意**：
+为了方便使用，audiotools的__init__.py中已经将常用的库进行了导入，可以直接使用. 包括了如下库：
 
-本库中所有的音频处理方法都是一个点一个点的进行的, 如果对于超大数组的一次性处理 (如48/24规格超过10s的音频), 可以考虑使用torchaudio中的方法, 如: amp和dB的相互转换, 滤波器等.
+```
+import os
+import torch
+import torchaudio
+import torchaudio.functional as F
+import torchvision
+import torch.utils.tensorboard as tb
+import math
+import matplotlib.pyplot as plt
+import multiprocessing
+import librosa
+import numpy as np
+import scipy.signal as signal
 
-分析类的方法输入输出格式都是 [通道, 数据]
-
-# 版本号定义
-
-稳定性.新py文件.新方法的加入.日常维护和bug修正
-
-稳定性解释：
-
-    v：正式版本, 不出意外的话, 稳定可用
-
-    t：过程版本, 有大量未解决的问题, 不可正常使用
-
-# 各个py文件说明
-
-process：各种处理方法. 
-
-analysis：分析绘图&特征提取.
+from tqdm import tqdm
+from . import analysis, process
+```
 
 # 常见问题
 
@@ -70,9 +89,6 @@ wsl可能没有gui, 如果想要gui显示, 需要下载gui支持, 可以尝试�
 ```
 sudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
 ```
-
-这里使用savefig解决
-
 
 ## 使用line_profiler进行性能分析
 
@@ -114,7 +130,7 @@ torch.set_default_dtype(torch.float64)
 
 这将全局指定tensor的精度为float64, 使得所有的tensor都以64位进行计算.
 
-但对于torchaudio的读取, 由于其本身的限制, 即算使用了上述代码全局指定了精度, 仍无法读取为64bit, 只能使用32bit, 这会导致后继所有的基于input初始化的数据都为32bit. 所以我们可以显式的指定读取的格式为64bit:
+但对于torchaudio的读取, 由于其本身的限制, 即算使用了上述代码全局指定了精度, 仍无法读取为64bit, 只能读成32bit, 这会导致后继所有的基于input初始化的数据都为32bit. 所以我们可以显式的指定读取的格式为64bit:
 
 ``` 
 input, sr = torchaudio.load(input_path)
