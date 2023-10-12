@@ -74,11 +74,12 @@ def mono(input):
     input: audio amplitude
     return: mono audio amplitude
     """
-    if input.size(0) > 1:
+    channel = len(input)
+    if channel > 1:
         input_all = 0
-        for i in range(0, input.size(0)):
+        for i in range(0, channel):
             input_all = input_all + input[i, :]
-        input_mono = input_all / input.size(0)
+        input_mono = input_all / channel
         output = input_mono[np.newaxis, :]
     else:
         output = input

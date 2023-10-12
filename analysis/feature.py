@@ -275,7 +275,7 @@ class drc_time:
         for i in range(int(0.02 * sr)):
             result_peak[0, i] = peak.digital(result[0, 0 : i + 1])
             test_peak[0, i] = peak.digital(test[0, 0 : i + 1])
-        for i in range(int(0.02 * sr), result.size(0)):
+        for i in range(int(0.02 * sr), len(result)):
             result_peak[0, i] = peak.digital(result[0, int(i - 0.02 * sr) : i])
             test_peak[0, i] = peak.digital(test[0, int(i - 0.02 * sr) : i])
 
@@ -328,7 +328,7 @@ class drc_ratio:
         ratiotest_peak = np.zeros_like(ratiotest)
         for i in range(int(0.02 * sr)):
             ratiotest_peak[i] = peak.digital(ratiotest[0 : i + 1])
-        for i in range(int(0.02 * sr), ratiotest.size(0)):
+        for i in range(int(0.02 * sr), len(ratiotest)):
             ratiotest_peak[i] = peak.digital(ratiotest[int(i - 0.02 * sr) : i])
 
         for i in range(91):
