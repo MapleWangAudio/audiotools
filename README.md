@@ -30,6 +30,10 @@ analysis：分析绘图&特征提取. 输入输出为一个点或一个数组, �
 
 # 安装
 
+**警告：** 
+
+下列命令只能安装cpu版本的pytorch，如果需要gpu版本，请先参考[pytorch官网](https://pytorch.org/get-started/locally/)进行安装，再运行下列命令.
+
 使用:
 
 ```
