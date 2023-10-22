@@ -6,3 +6,4 @@
 4. [X] to_mono可进行代码优化
 5. [ ] delete可进行代码优化
 6. [ ] 方程转查表
+7. [ ] filter.py完善, 也许就不需要pytorch了

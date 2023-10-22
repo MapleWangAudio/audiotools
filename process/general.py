@@ -189,13 +189,16 @@ def delete(
     return output
 
 
-def amp2dB(input):
+def amp2dB(input, low_cut=-90):
     """
     Convert amplitude to dB
     input: audio amplitude
     return: audio dB [-90,+∞)
     """
-    return 20 * np.log10(input + 3.1623e-05)
+    low_cut = dB2amp(low_cut)
+    input = np.where(input >= low_cut, input, low_cut)
+    output = 20 * np.log10(input)
+    return output
 
 
 def dB2amp(input):
