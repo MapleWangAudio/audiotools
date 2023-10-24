@@ -1,7 +1,6 @@
 import torch
 import torchaudio
 import torchaudio.functional as F
-import torchvision
 import torch.utils.tensorboard as tb
 import math
 import matplotlib.pyplot as plt
@@ -18,7 +17,6 @@ __all__ = [
     "torch",
     "torchaudio",
     "F",
-    "torchvision",
     "tb",
     "math",
     "plt",

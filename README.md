@@ -67,11 +67,9 @@ sys.path.append("/your/audiotools/path")
 为了方便使用，audiotools的__init__.py中已经将常用的库进行了导入，可以直接使用. 包括了如下库：
 
 ```
-import os
 import torch
 import torchaudio
 import torchaudio.functional as F
-import torchvision
 import torch.utils.tensorboard as tb
 import math
 import matplotlib.pyplot as plt
@@ -79,10 +77,13 @@ import multiprocessing
 import librosa
 import numpy as np
 import scipy.signal as signal
+import scipy.optimize as opt
 
 from tqdm import tqdm
 from . import analysis, process
 ```
+
+如果不喜欢这类写法，可以进入__init__.py，将不需要的库注释掉.
 
 # 常见问题
 
