@@ -5,19 +5,33 @@ from . import plot
 
 
 def envelope_peak(
-    input, sr, smooth_length=2, buffer_size=16, low_cut=None, save_path=None
+    source,
+    sr,
+    smooth_length=2,
+    buffer_size=16,
+    low_cut=None,
+    save_path=None,
 ):
+    """
+    Computes the peak envelope of an audio input.
+    source: audio amplitude
+    sr: sample rate of the signal (hz)
+    smooth_length: smooth length (ms)
+    buffer_size: buffer size
+    low_cut: low cut dB
+    save_path: save path
+    """
     smooth_length = int(smooth_length * 0.001 * sr)
-    length = len(input[0, :])
+    length = len(source[0, :])
 
     step = math.ceil(length / buffer_size)
     post_pad_length = step * buffer_size - length
 
     stage = np.zeros([buffer_size, smooth_length])
-    env = np.zeros(step * buffer_size)
+    result = np.zeros(step * buffer_size)
 
-    input = np.pad(
-        input,
+    source = np.pad(
+        source,
         ((0, 0), (smooth_length - 1, post_pad_length)),
         "constant",
         constant_values=0,
@@ -25,35 +39,44 @@ def envelope_peak(
 
     for i in range(0, step * buffer_size, buffer_size):
         for j in range(buffer_size):
-            stage[j] = input[0, i + j : i + j + smooth_length]
-        env[i : i + buffer_size] = np.max(stage, 1)
+            stage[j] = source[0, i + j : i + j + smooth_length]
+        result[i : i + buffer_size] = np.max(stage, 1)
 
-    env = env[:length]
-    env = env.reshape(1, -1)
+    result = result[:length]
+    result = result.reshape(1, -1)
 
     if isinstance(low_cut, int):
-        env = process.amp2dB(env, low_cut)
+        result = process.amp2dB(result, low_cut)
 
     if isinstance(save_path, str):
-        plot.waveform(env, sr, name=save_path)
+        plot.waveform(result, sr, name=save_path)
     else:
-        return env
+        return result
 
 
 def envelope_RMS(
-    input, sr, smooth_length=2, buffer_size=16, low_cut=None, save_path=None
+    source, sr, smooth_length=2, buffer_size=16, low_cut=None, save_path=None
 ):
+    """
+    Computes the RMS envelope of an audio input.
+    source: audio amplitude
+    sr: sample rate of the signal (hz)
+    smooth_length: smooth length (ms)
+    buffer_size: buffer size
+    low_cut: low cut dB
+    save_path: save path
+    """
     smooth_length = int(smooth_length * 0.001 * sr)
-    length = len(input[0, :])
+    length = len(source[0, :])
 
     step = math.ceil(length / buffer_size)
     post_pad_length = step * buffer_size - length
 
     stage = np.zeros([buffer_size, smooth_length])
-    env = np.zeros(step * buffer_size)
+    result = np.zeros(step * buffer_size)
 
-    input = np.pad(
-        input,
+    source = np.pad(
+        source,
         ((0, 0), (smooth_length - 1, post_pad_length)),
         "constant",
         constant_values=0,
@@ -61,20 +84,20 @@ def envelope_RMS(
 
     for i in range(0, step * buffer_size, buffer_size):
         for j in range(buffer_size):
-            stage[j] = input[0, i + j : i + j + smooth_length]
-        env[i : i + buffer_size] = np.linalg.norm(stage, 2, 1)
+            stage[j] = source[0, i + j : i + j + smooth_length]
+        result[i : i + buffer_size] = np.linalg.norm(stage, 2, 1)
 
-    env = env[:length]
-    env = env / (smooth_length**0.5)
-    env = env.reshape(1, -1)
+    result = result[:length]
+    result = result / (smooth_length**0.5)
+    result = result.reshape(1, -1)
 
     if isinstance(low_cut, int):
-        env = process.amp2dB(env, low_cut)
+        result = process.amp2dB(result, low_cut)
 
     if isinstance(save_path, str):
-        plot.waveform(env, sr, name=save_path)
+        plot.waveform(result, sr, name=save_path)
     else:
-        return env
+        return result
 
 
 def peak_digital(input):
@@ -372,7 +395,7 @@ def drc_time_extract(test, result, sr=96000):
 
 def drc_ratio_test_signal(freq=1000, sr=96000):
     """
-    Generate a signal for ratio test
+    Generate a signal for ratio test [-90,0]
     freq: test signal frequency
     sr: sample rate of the signal (hz)
     return: signal
@@ -406,19 +429,15 @@ def drc_ratio_extract(ratiotest, sr):
         stage = ratiotest[int(i * sr * 5 + sr * 4.85) : int((i + 1) * sr * 5)]
         ratiotest_stage = np.concatenate((ratiotest_stage, stage), 0)
     ratiotest = ratiotest_stage[1:]
+    ratiotest = ratiotest.reshape(1, -1)
 
-    ratiotest_peak = np.zeros_like(ratiotest)
-    for i in range(int(0.02 * sr)):
-        ratiotest_peak[i] = peak_digital(ratiotest[0 : i + 1])
-    for i in range(int(0.02 * sr), len(ratiotest)):
-        ratiotest_peak[i] = peak_digital(ratiotest[int(i - 0.02 * sr) : i])
-
-    # ratiotest_peak2 = envelope_peak(ratiotest.reshape(1, -1), sr, 20, 128)
-    # print(np.sum(ratiotest_peak2[0, 2 * sr :] - ratiotest_peak[2 * sr :]))
+    ratiotest_peak = envelope_peak(ratiotest, sr, 20, 1024)
 
     for i in range(91):
         # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
-        stage = ratiotest_peak[int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)]
+        stage = ratiotest_peak[
+            0, int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)
+        ]
         stage = min(stage)
         output[i] = stage
 

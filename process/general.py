@@ -227,9 +227,9 @@ def read(path):
 
 def write(data, sr, path):
     """
-    Write audio file
+    Write audio file, bit depth: int 24
     path: audio file path
-    a: audio amplitude
+    data: audio data
     sr: sample rate
     """
     sf.write(path, data.T, sr, "PCM_24")
