@@ -3,9 +3,9 @@ import numpy as np
 
 def gain_computer(
     input,
-    threshold=0,
+    threshold=0.0,
     one_over_ratio=0.5,
-    knee=0,
+    knee=0.0,
 ):
     """
     Computes the gain of an audio input for compressor.
@@ -31,9 +31,9 @@ def gain_computer(
 
 def gain_computer_speedup(
     input,
-    threshold=0,
+    threshold=0.0,
     one_over_ratio=0.5,
-    knee=0,
+    knee=0.0,
 ):
     """
     Computes the gain of an audio input for compressor. 多拐点和多阈值压缩可以通过堆叠多个压缩/扩展来实现.

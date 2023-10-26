@@ -4,7 +4,7 @@
 
 大多数情况下, 我们以以下的原则进行使用:
 
-    1. 使用torchaudio进行读取
+    1. 使用process.read和load进行读取和保存
 
     2. 实时处理时, 优先使用本库方法
 
@@ -110,7 +110,7 @@ kernprof -l profile.py
 python -m line_profiler profile.py.lprof
 ```
 
-## 使用torch时将数据放在gpu上运行的方法：
+## 使用torch时将数据放在gpu上运行的方法
 
 ``````
 # 检查是否有可用的 GPU 设备
@@ -123,7 +123,7 @@ else:
 test = test.to(device)
 ``````
 
-## 以float64计算的方法:
+## 以float64计算的方法
 
 对音频处理, float32不太够用, 同时float64时numpy的计算会更快, 所以尽量使用float64.
 
@@ -141,3 +141,7 @@ torch.set_default_dtype(torch.float64)
 input, sr = torchaudio.load(input_path)
 input = input.double()
 ```
+
+## 为什么要用process.read和process.load
+
+因为torchaudio经常需要数据格式转换, 而soundfile的读取结果是[数据, 通道], 不是很方便. 同时这俩读取出来都是float32, 用float64进行numpy计算会更快, 还需要额外的代码进行转换. 所以我们使用process.read和process.load进行读取和保存, 使得读取结果为[通道, 数据], 精度为float64, 方便后继处理.

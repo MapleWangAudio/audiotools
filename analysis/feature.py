@@ -1,344 +1,427 @@
 from .. import process
 import numpy as np
+import math
+from . import plot
 
 
-class peak:
-    def digital(input):
-        """
-        Computes the peak value of an audio input. Digital Type.
-        input: audio amplitude
-        return: peak values
-        """
-        return np.max(input)
+def envelope_peak(
+    input, sr, smooth_length=2, buffer_size=16, low_cut=None, save_path=None
+):
+    smooth_length = int(smooth_length * 0.001 * sr)
+    length = len(input[0, :])
 
-    def analog_prue(
+    step = math.ceil(length / buffer_size)
+    post_pad_length = step * buffer_size - length
+
+    stage = np.zeros([buffer_size, smooth_length])
+    env = np.zeros(step * buffer_size)
+
+    input = np.pad(
         input,
-        output_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the peak value of an audio input. Analog Prue Type.
-        input: audio amplitude
-        output_old: peak value of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: peak value
-        """
-        return release_coeff * output_old + (1 - attack_coeff) * max(
-            (input - output_old), 0
-        )
+        ((0, 0), (smooth_length - 1, post_pad_length)),
+        "constant",
+        constant_values=0,
+    )
 
-    def analog_level_corrected0(
+    for i in range(0, step * buffer_size, buffer_size):
+        for j in range(buffer_size):
+            stage[j] = input[0, i + j : i + j + smooth_length]
+        env[i : i + buffer_size] = np.max(stage, 1)
+
+    env = env[:length]
+    env = env.reshape(1, -1)
+
+    if isinstance(low_cut, int):
+        env = process.amp2dB(env, low_cut)
+
+    if isinstance(save_path, str):
+        plot.waveform(env, sr, name=save_path)
+    else:
+        return env
+
+
+def envelope_RMS(
+    input, sr, smooth_length=2, buffer_size=16, low_cut=None, save_path=None
+):
+    smooth_length = int(smooth_length * 0.001 * sr)
+    length = len(input[0, :])
+
+    step = math.ceil(length / buffer_size)
+    post_pad_length = step * buffer_size - length
+
+    stage = np.zeros([buffer_size, smooth_length])
+    env = np.zeros(step * buffer_size)
+
+    input = np.pad(
         input,
-        state_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the peak value of an audio input in decoupled style. Analog Level Correted Type.
-        input: audio amplitude
-        state_old: peak state of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: peak, peak state
-        """
-        state = max(input, release_coeff * state_old)
-        output = process.smoother(state, state_old, attack_coeff)
+        ((0, 0), (smooth_length - 1, post_pad_length)),
+        "constant",
+        constant_values=0,
+    )
 
-        return output, state
+    for i in range(0, step * buffer_size, buffer_size):
+        for j in range(buffer_size):
+            stage[j] = input[0, i + j : i + j + smooth_length]
+        env[i : i + buffer_size] = np.linalg.norm(stage, 2, 1)
 
-    def analog_level_corrected1(
+    env = env[:length]
+    env = env / (smooth_length**0.5)
+    env = env.reshape(1, -1)
+
+    if isinstance(low_cut, int):
+        env = process.amp2dB(env, low_cut)
+
+    if isinstance(save_path, str):
+        plot.waveform(env, sr, name=save_path)
+    else:
+        return env
+
+
+def peak_digital(input):
+    """
+    Computes the peak value of an audio input. Digital Type.
+    input: audio amplitude
+    return: peak values
+    """
+    return np.max(input)
+
+
+def peak_analog_prue(
+    input,
+    output_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the peak value of an audio input. Analog Prue Type.
+    input: audio amplitude
+    output_old: peak value of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: peak value
+    """
+    return release_coeff * output_old + (1 - attack_coeff) * max(
+        (input - output_old), 0
+    )
+
+
+def peak_analog_level_corrected0(
+    input,
+    state_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the peak value of an audio input in decoupled style. Analog Level Correted Type.
+    input: audio amplitude
+    state_old: peak state of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: peak, peak state
+    """
+    state = max(input, release_coeff * state_old)
+    output = process.smoother(state, state_old, attack_coeff)
+
+    return output, state
+
+
+def peak_analog_level_corrected1(
+    input,
+    output_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the peak value of an audio input in branch style. Analog Level Correted Type.
+    input: audio amplitude
+    output_old: peak value of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: peak
+    """
+    if input > output_old:
+        output = process.smoother(input, output_old, attack_coeff)
+    else:
+        output = release_coeff * output_old
+
+    return output
+
+
+def peak_analog_smooth0(
+    input,
+    state_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the peak value of an audio input in decoupled style. Analog Smooth Type.
+    input: audio amplitude
+    state_old: peak state of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: peak, peak state
+    """
+    state = max(
         input,
-        output_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the peak value of an audio input in branch style. Analog Level Correted Type.
-        input: audio amplitude
-        output_old: peak value of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: peak
-        """
-        if input > output_old:
-            output = process.smoother(input, output_old, attack_coeff)
-        else:
-            output = release_coeff * output_old
+        process.smoother(input, state_old, release_coeff),
+    )
+    output = process.smoother(state, state_old, attack_coeff)
 
-        return output
-
-    def analog_smooth0(
-        input,
-        state_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the peak value of an audio input in decoupled style. Analog Smooth Type.
-        input: audio amplitude
-        state_old: peak state of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: peak, peak state
-        """
-        state = max(
-            input,
-            process.smoother(input, state_old, release_coeff),
-        )
-        output = process.smooth_filter(state, attack_coeff)
-
-        return output, state
-
-    def analog_smooth1(
-        input,
-        output_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the peak value of an audio input in branch style. Analog Smooth Type.
-        input: audio amplitude
-        output_old: peak value of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: peak
-        """
-        if input > output_old:
-            output = process.smoother(input, output_old, attack_coeff)
-        else:
-            output = process.smoother(input, output_old, release_coeff)
-
-        return output
+    return output, state
 
 
-class RMS:
-    def digital(input):
-        """
-        Computes the root mean square (RMS) of an audio input. Digital Type
-        input: audio amplitude
-        return: RMS
-        """
-        return np.sqrt(np.mean(np.square(input)))
+def peak_analog_smooth1(
+    input,
+    output_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the peak value of an audio input in branch style. Analog Smooth Type.
+    input: audio amplitude
+    output_old: peak value of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: peak
+    """
+    if input > output_old:
+        output = process.smoother(input, output_old, attack_coeff)
+    else:
+        output = process.smoother(input, output_old, release_coeff)
 
-    def analog_prue(
-        input,
-        output_old,
-        coeff,
-    ):
-        """
-        Computes the root mean square (RMS) of an audio input. Analog Prue Type
-        input: audio amplitude
-        output_old: RMS value of the last sample
-        return: RMS
-        """
-        output = process.smoother(input**2, output_old**2, coeff)
-        output = output**0.5
-
-        return output
-
-    def analog_level_corrected0(
-        input,
-        state_old,
-        output_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the root mean square (RMS) of an audio input in decoupled style. Analog Level Corrected Type
-        input: audio amplitude
-        state_old: RMS state of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: RMS
-        """
-        state = (input**2 + (release_coeff * state_old) ** 2) / 2
-        state = state**0.5
-
-        output = process.smoother(state, output_old, attack_coeff)
-
-        return output, state
-
-    def analog_level_corrected1(
-        input,
-        output_old,
-        attack_coeff=1,
-        release_coeff=1,
-    ):
-        """
-        Computes the root mean square (RMS) of an audio input in branch style. Analog Level Corrected Type
-        input: audio amplitude
-        output_old: RMS value of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: RMS
-        """
-        if input > output_old:
-            output = process.smoother(input**2, output_old**2, attack_coeff)
-        else:
-            output = release_coeff * output_old**2
-
-        output = output**0.5
-
-        return output
-
-    def analog_smooth0(
-        input,
-        state_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the RMS value of an audio input in decoupled style. Analog Smooth Type.
-        input: audio amplitude
-        state_old: RMS state of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: RMS, RMS state
-        """
-        state = (
-            input**2 + (process.smoother(input, state_old, release_coeff)) ** 2
-        ) / 2
-        state = state**0.5
-
-        output = process.smoother(state, output, attack_coeff)
-
-        return output, state
-
-    def analog_smooth1(
-        input,
-        output_old,
-        attack_coeff,
-        release_coeff,
-    ):
-        """
-        Computes the RMS value of an audio input in branch style. Analog Smooth Type.
-        input: audio amplitude
-        output_old: RMS value of the last sample
-        attack_coeff: attack coefficient
-        release_coeff: release coefficient
-        return: RMS
-        """
-        if input > output_old:
-            output = process.smoother(input**2, output_old**2, attack_coeff)
-        else:
-            output = process.smoother(input**2, output_old**2, release_coeff)
-
-        output = output**0.5
-
-        return output
+    return output
 
 
-class drc_time:
-    def test_signal(
-        freq=1000,
-        sr=96000,
-        amplitude1=0.0316,
-        length1=1,
-        amplitude2=1,
-        length2=4,
-        amplitude3=0.0316,
-        length3=5,
-    ):
-        """
-        Generate a signal for time test
-        freq: frequency of the signal (hz)
-        sr: sample rate of the signal (hz)
-        amplitude1: amplitude of the first stage
-        length1: length of the first stage (s)
-        amplitude2: amplitude of the second stage
-        length2: length of the second stage (s)
-        amplitude3: amplitude of the third stage
-        length3: length of the third stage (s)
-        return: signal
-        """
-        stage1 = process.generate_signal(freq, sr, amplitude1, length1)
-        stage2 = process.generate_signal(freq, sr, amplitude2, length2)
-        stage3 = process.generate_signal(freq, sr, amplitude3, length3)
-        signal = np.hstack((stage1, stage2, stage3))
-        return signal
-
-    def time_extract(test, result, sr=96000):
-        """
-        Extract the time from the time test signal
-        test: time test signal raw
-        result: time test signal processed
-        sr: sample rate of the signal (hz)
-        return: time featrue
-        """
-        result = np.abs(result[0, :])
-        test = np.abs(test[0, :])
-
-        result_peak = np.zeros_like(result)
-        test_peak = np.zeros_like(test)
-        for i in range(int(0.02 * sr)):
-            result_peak[0, i] = peak.digital(result[0, 0 : i + 1])
-            test_peak[0, i] = peak.digital(test[0, 0 : i + 1])
-        for i in range(int(0.02 * sr), len(result)):
-            result_peak[0, i] = peak.digital(result[0, int(i - 0.02 * sr) : i])
-            test_peak[0, i] = peak.digital(test[0, int(i - 0.02 * sr) : i])
-
-        gain = result / test
-
-        gain[0, 0:100] = 1
-        gain = np.where(np.isnan(gain), np.tensor(3.1623e-05), gain)
-
-        gain = process.amp2dB(gain)
-        return gain
+def RMS_digital(input):
+    """
+    Computes the root mean square (RMS) of an audio input. Digital Type
+    input: audio amplitude
+    return: RMS
+    """
+    return np.sqrt(np.mean(np.square(input)))
 
 
-class drc_ratio:
-    def test_signal(freq=1000, sr=96000):
-        """
-        Generate a signal for ratio test
-        freq: test signal frequency
-        sr: sample rate of the signal (hz)
-        return: signal
-        """
-        stage = np.zeros(91, sr * 5)
-        signal = np.zeros(1)
-        for i in range(91):
-            amp = process.dB2amp(i - 90)
-            stage_stage = process.generate_signal(freq, sr, amp, 5)
-            stage[i, :] = stage_stage[0, :]
-            signal = np.vstack((signal, stage[i, :]))
-        signal = signal[1:]
-        signal = signal[np.newaxis, :]
+def RMS_analog_prue(
+    input,
+    output_old,
+    coeff,
+):
+    """
+    Computes the root mean square (RMS) of an audio input. Analog Prue Type
+    input: audio amplitude
+    output_old: RMS value of the last sample
+    return: RMS
+    """
+    output = process.smoother(input**2, output_old**2, coeff)
+    output = output**0.5
 
-        return signal
+    return output
 
-    def ratio_extract(ratiotest, sr):
-        """
-        Extract the ratio from the ratio test signal
-        ratiotest: ratio test signal processed
-        sr: sample rate of the signal (hz)
-        return: ratio feature
-        """
-        output = np.zeros(91)
-        ratiotest = ratiotest[0, :]
 
-        # 先选取每个阶段的最后0.15s，因为前面没意义，同时为peak计算节省运算量
-        ratiotest_stage = np.zeros(1)
-        for i in range(91):
-            stage = ratiotest[int(i * sr * 5 + sr * 4.85) : int((i + 1) * sr * 5)]
-            ratiotest_stage = np.vstack((ratiotest_stage, stage))
-        ratiotest = ratiotest_stage[1:]
+def RMS_analog_level_corrected0(
+    input,
+    state_old,
+    output_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the root mean square (RMS) of an audio input in decoupled style. Analog Level Corrected Type
+    input: audio amplitude
+    state_old: RMS state of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: RMS
+    """
+    state = (input**2 + (release_coeff * state_old) ** 2) / 2
+    state = state**0.5
 
-        ratiotest_peak = np.zeros_like(ratiotest)
-        for i in range(int(0.02 * sr)):
-            ratiotest_peak[i] = peak.digital(ratiotest[0 : i + 1])
-        for i in range(int(0.02 * sr), len(ratiotest)):
-            ratiotest_peak[i] = peak.digital(ratiotest[int(i - 0.02 * sr) : i])
+    output = process.smoother(state, output_old, attack_coeff)
 
-        for i in range(91):
-            # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
-            stage = ratiotest_peak[
-                int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)
-            ]
-            stage = min(stage)
-            output[i] = stage
+    return output, state
 
-        output = output[np.newaxis, :]
 
-        return output
+def RMS_analog_level_corrected1(
+    input,
+    output_old,
+    attack_coeff=1,
+    release_coeff=1,
+):
+    """
+    Computes the root mean square (RMS) of an audio input in branch style. Analog Level Corrected Type
+    input: audio amplitude
+    output_old: RMS value of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: RMS
+    """
+    if input > output_old:
+        output = process.smoother(input**2, output_old**2, attack_coeff)
+    else:
+        output = release_coeff * output_old**2
+
+    output = output**0.5
+
+    return output
+
+
+def RMS_analog_smooth0(
+    input,
+    state_old,
+    output_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the RMS value of an audio input in decoupled style. Analog Smooth Type.
+    input: audio amplitude
+    state_old: RMS state of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: RMS, RMS state
+    """
+    state = (input**2 + (process.smoother(input, state_old, release_coeff)) ** 2) / 2
+    state = state**0.5
+
+    output = process.smoother(state, output_old, attack_coeff)
+
+    return output, state
+
+
+def RMS_analog_smooth1(
+    input,
+    output_old,
+    attack_coeff,
+    release_coeff,
+):
+    """
+    Computes the RMS value of an audio input in branch style. Analog Smooth Type.
+    input: audio amplitude
+    output_old: RMS value of the last sample
+    attack_coeff: attack coefficient
+    release_coeff: release coefficient
+    return: RMS
+    """
+    if input > output_old:
+        output = process.smoother(input**2, output_old**2, attack_coeff)
+    else:
+        output = process.smoother(input**2, output_old**2, release_coeff)
+
+    output = output**0.5
+
+    return output
+
+
+def drc_time_test_signal(
+    freq=1000,
+    sr=96000,
+    amplitude1=0.0316,
+    length1=1,
+    amplitude2=1,
+    length2=4,
+    amplitude3=0.0316,
+    length3=5,
+):
+    """
+    Generate a signal for time test
+    freq: frequency of the signal (hz)
+    sr: sample rate of the signal (hz)
+    amplitude1: amplitude of the first stage
+    length1: length of the first stage (s)
+    amplitude2: amplitude of the second stage
+    length2: length of the second stage (s)
+    amplitude3: amplitude of the third stage
+    length3: length of the third stage (s)
+    return: signal
+    """
+    stage1 = process.generate_signal(freq, sr, amplitude1, length1)
+    stage2 = process.generate_signal(freq, sr, amplitude2, length2)
+    stage3 = process.generate_signal(freq, sr, amplitude3, length3)
+    signal = np.hstack((stage1, stage2, stage3))
+    return signal
+
+
+def drc_time_extract(test, result, sr=96000):
+    """
+    Extract the time from the time test signal
+    test: time test signal raw
+    result: time test signal processed
+    sr: sample rate of the signal (hz)
+    return: time featrue
+    """
+    result = np.abs(result[0, :])
+    test = np.abs(test[0, :])
+
+    result_peak = np.zeros_like(result)
+    test_peak = np.zeros_like(test)
+    for i in range(int(0.02 * sr)):
+        result_peak[0, i] = peak_digital(result[0, 0 : i + 1])
+        test_peak[0, i] = peak_digital(test[0, 0 : i + 1])
+    for i in range(int(0.02 * sr), len(result)):
+        result_peak[0, i] = peak_digital(result[0, int(i - 0.02 * sr) : i])
+        test_peak[0, i] = peak_digital(test[0, int(i - 0.02 * sr) : i])
+
+    gain = result / test
+
+    gain[0, 0:100] = 1
+    gain = np.where(np.isnan(gain), 3.1623e-05, gain)
+
+    gain = process.amp2dB(gain)
+    return gain
+
+
+def drc_ratio_test_signal(freq=1000, sr=96000):
+    """
+    Generate a signal for ratio test
+    freq: test signal frequency
+    sr: sample rate of the signal (hz)
+    return: signal
+    """
+    stage = np.zeros([91, sr * 5])
+    signal = np.zeros(1)
+    for i in range(91):
+        amp = process.dB2amp(i - 90)
+        stage_stage = process.generate_signal(freq, sr, amp, 5)
+        stage[i] = stage_stage[0]
+        signal = np.concatenate((signal, stage[i]), 0)
+    signal = signal[1:]
+    signal = signal.reshape(1, -1)
+
+    return signal
+
+
+def drc_ratio_extract(ratiotest, sr):
+    """
+    Extract the ratio from the ratio test signal
+    ratiotest: ratio test signal processed
+    sr: sample rate of the signal (hz)
+    return: ratio feature
+    """
+    output = np.zeros(91)
+    ratiotest = ratiotest[0, :]
+
+    # 先选取每个阶段的最后0.15s，因为前面没意义，同时为peak计算节省运算量
+    ratiotest_stage = np.zeros(1)
+    for i in range(91):
+        stage = ratiotest[int(i * sr * 5 + sr * 4.85) : int((i + 1) * sr * 5)]
+        ratiotest_stage = np.concatenate((ratiotest_stage, stage), 0)
+    ratiotest = ratiotest_stage[1:]
+
+    ratiotest_peak = np.zeros_like(ratiotest)
+    for i in range(int(0.02 * sr)):
+        ratiotest_peak[i] = peak_digital(ratiotest[0 : i + 1])
+    for i in range(int(0.02 * sr), len(ratiotest)):
+        ratiotest_peak[i] = peak_digital(ratiotest[int(i - 0.02 * sr) : i])
+
+    # ratiotest_peak2 = envelope_peak(ratiotest.reshape(1, -1), sr, 20, 128)
+    # print(np.sum(ratiotest_peak2[0, 2 * sr :] - ratiotest_peak[2 * sr :]))
+
+    for i in range(91):
+        # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
+        stage = ratiotest_peak[int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)]
+        stage = min(stage)
+        output[i] = stage
+
+    output = output.reshape(1, -1)
+
+    return output

@@ -11,6 +11,8 @@ from .general import (
     delete,
     amp2dB,
     dB2amp,
+    read,
+    write,
 )
 
 __all__ = [
@@ -25,4 +27,6 @@ __all__ = [
     "delete",
     "amp2dB",
     "dB2amp",
+    "read",
+    "write",
 ]

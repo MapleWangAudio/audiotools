@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import soundfile as sf
 
 
 # todo：生成噪音信号
@@ -26,9 +27,9 @@ def generate_signal(
     if mode == 1:
         output = amplitude * np.sign(np.sin(2 * np.pi * freq * t))
     if mode == 2:
-        output = amplitude * (2 / np.pi) * np.atan(np.tan(np.pi * freq * t))
+        output = amplitude * (2 / np.pi) * np.arctan(np.tan(np.pi * freq * t))
 
-    output = output[np.newaxis, :]
+    output = output.reshape(1, -1)
 
     return output
 
@@ -80,7 +81,7 @@ def mono(input):
         for i in range(0, channel):
             input_all = input_all + input[i, :]
         input_mono = input_all / channel
-        output = input_mono[np.newaxis, :]
+        output = input_mono.reshape(1, -1)
     else:
         output = input
 
@@ -208,3 +209,27 @@ def dB2amp(input):
     return: audio amplitude
     """
     return 10 ** (input / 20)
+
+
+def read(path):
+    """
+    Read audio file
+    path: audio file path
+    return: audio amplitude, sample rate
+    """
+    data, sr = sf.read(path)
+    data = data.T
+    if data.ndim == 1:
+        data = data.reshape(1, -1)
+    data = data.astype(np.float64)
+    return data, sr
+
+
+def write(data, sr, path):
+    """
+    Write audio file
+    path: audio file path
+    a: audio amplitude
+    sr: sample rate
+    """
+    sf.write(path, data.T, sr, "PCM_24")
