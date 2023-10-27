@@ -4,7 +4,7 @@ import torchaudio.functional as F
 import torch.utils.tensorboard as tb
 import math
 import matplotlib.pyplot as plt
-import multiprocessing
+import multiprocessing as mp
 import librosa
 import numpy as np
 import scipy.signal as signal
@@ -20,7 +20,7 @@ __all__ = [
     "tb",
     "math",
     "plt",
-    "multiprocessing",
+    "mp",
     "librosa",
     "np",
     "signal",
