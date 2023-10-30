@@ -337,13 +337,13 @@ def RMS_analog_smooth1(
 
 def drc_time_test_signal(
     freq=1000,
-    sr=96000,
-    amplitude1=0.0316,
-    length1=1,
-    amplitude2=1,
-    length2=4,
-    amplitude3=0.0316,
-    length3=5,
+    sr=48000,
+    dB1=-45.0,
+    length1=1.0,
+    dB2=0.0,
+    length2=4.0,
+    dB3=-45.0,
+    length3=5.0,
 ):
     """
     Generate a signal for time test
@@ -357,9 +357,9 @@ def drc_time_test_signal(
     length3: length of the third stage (s)
     return: signal
     """
-    stage1 = process.generate_signal(freq, sr, amplitude1, length1)
-    stage2 = process.generate_signal(freq, sr, amplitude2, length2)
-    stage3 = process.generate_signal(freq, sr, amplitude3, length3)
+    stage1 = process.generate_signal(freq, sr, dB1, length1)
+    stage2 = process.generate_signal(freq, sr, dB2, length2)
+    stage3 = process.generate_signal(freq, sr, dB3, length3)
     signal = np.hstack((stage1, stage2, stage3))
     return signal
 

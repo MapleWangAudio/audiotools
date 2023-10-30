@@ -7,7 +7,7 @@ import soundfile as sf
 def generate_signal(
     freq,
     sr,
-    amplitude,
+    dB,
     length,
     mode=0,
 ):
@@ -20,6 +20,7 @@ def generate_signal(
     mode: 0: sine wave, 1: square wave, 2: triangle wave
     return: signal
     """
+    amplitude = dB2amp(dB)
     t = np.linspace(0, length, int(sr * length))
 
     if mode == 0:
