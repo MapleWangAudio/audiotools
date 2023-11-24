@@ -403,8 +403,8 @@ def drc_ratio_test_signal(freq=1000, sr=96000):
     stage = np.zeros([91, sr * 5])
     signal = np.zeros(1)
     for i in range(91):
-        amp = process.dB2amp(i - 90)
-        stage_stage = process.generate_signal(freq, sr, amp, 5)
+        dB = i - 90
+        stage_stage = process.generate_signal(freq, sr, dB, 5)
         stage[i] = stage_stage[0]
         signal = np.concatenate((signal, stage[i]), 0)
     signal = signal[1:]
