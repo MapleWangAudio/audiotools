@@ -50,6 +50,7 @@ def envelope_peak(
 
     if isinstance(save_path, str):
         plot.waveform(result, sr, name=save_path)
+        return result
     else:
         return result
 
@@ -96,6 +97,7 @@ def envelope_RMS(
 
     if isinstance(save_path, str):
         plot.waveform(result, sr, name=save_path)
+        return result
     else:
         return result
 
