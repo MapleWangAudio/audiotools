@@ -397,15 +397,15 @@ def drc_time_extract(test, result, sr=96000):
 
 def drc_ratio_test_signal(freq=1000, sr=96000):
     """
-    Generate a signal for ratio test [-90,0]
+    Generate a signal for ratio test [-60,0]
     freq: test signal frequency
     sr: sample rate of the signal (hz)
     return: signal
     """
-    stage = np.zeros([91, sr * 5])
+    stage = np.zeros([61, sr * 5])
     signal = np.zeros(1)
-    for i in range(91):
-        dB = i - 90
+    for i in range(61):
+        dB = i - 60
         stage_stage = process.generate_signal(freq, sr, dB, 5)
         stage[i] = stage_stage[0]
         signal = np.concatenate((signal, stage[i]), 0)
