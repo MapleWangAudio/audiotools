@@ -415,27 +415,27 @@ def drc_ratio_test_signal(freq=1000, sr=96000, start=-60):
     return signal
 
 
-def drc_ratio_extract(ratiotest, sr):
+def drc_ratio_extract(ratiotest, sr, num=61):
     """
     Extract the ratio from the ratio test signal
     ratiotest: ratio test signal processed
     sr: sample rate of the signal (hz)
     return: ratio feature
     """
-    output = np.zeros(91)
+    output = np.zeros(num)
     ratiotest = ratiotest[0, :]
 
     # 先选取每个阶段的最后0.15s，因为前面没意义，同时为peak计算节省运算量
     ratiotest_stage = np.zeros(1)
-    for i in range(91):
+    for i in range(num):
         stage = ratiotest[int(i * sr * 5 + sr * 4.85) : int((i + 1) * sr * 5)]
         ratiotest_stage = np.concatenate((ratiotest_stage, stage), 0)
     ratiotest = ratiotest_stage[1:]
     ratiotest = ratiotest.reshape(1, -1)
 
-    ratiotest_peak = envelope_peak(ratiotest, sr, 20, 1024)
+    ratiotest_peak = envelope_peak(ratiotest, sr, 10, 512)
 
-    for i in range(91):
+    for i in range(num):
         # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前50ms
         stage = ratiotest_peak[
             0, int(i * sr * 0.15 + sr * 0.05) : int((i + 1) * sr * 0.2)
