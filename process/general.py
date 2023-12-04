@@ -234,3 +234,19 @@ def write(data, sr, path):
     sr: sample rate
     """
     sf.write(path, data.T, sr, "PCM_24")
+
+
+def mix(dry, wet, mix):
+    """
+    Mix two audio signals
+    dry: dry signal
+    wet: wet signal
+    mix: mix ratio
+    return: mixed signal
+    """
+    if mix < 0.5:
+        output = dry + wet * (4 * mix**2)
+    else:
+        output = dry * 4 * ((1 - mix) ** 2) + wet
+
+    return output
