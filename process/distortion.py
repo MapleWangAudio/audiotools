@@ -69,12 +69,12 @@ def exp(
 
 def clip(
     input,
-    posi_limit=0,
-    nega_limit=0,
-    posi_one_over_ratio=0,
-    nega_one_over_ratio=0,
-    posi_knee=0,
-    nega_knee=0,
+    posi_limit=0.0,
+    nega_limit=0.0,
+    posi_one_over_ratio=0.0,
+    nega_one_over_ratio=0.0,
+    posi_knee=0.0,
+    nega_knee=0.0,
 ):
     """
     Clip type nonlinear
