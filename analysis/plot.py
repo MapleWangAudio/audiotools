@@ -102,7 +102,7 @@ def specgram(
 
 def fvtool(
     b,
-    a=1,
+    a="None",
     sr=48000,
     end=False,
     name="fvtool.png",
@@ -117,8 +117,9 @@ def fvtool(
     name: name of the saved file
     save: True saves the plot as a file, False does not save the plot
     """
-    if a == 1:
+    if isinstance(a, str):
         worN = len(b)
+        a = 1
     else:
         worN = 8192
 
