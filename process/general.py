@@ -104,6 +104,7 @@ def delete(
     all: True: process the whole input, False: only process the beginning and the end of the input
     return: processed input
     """
+    input_copy = input
     input_mono = mono(input)
     input_mono = input_mono[0, :]
 

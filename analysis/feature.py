@@ -114,38 +114,36 @@ def peak_digital(input):
 def peak_analog_prue(
     input,
     output_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the peak value of an audio input. Analog Prue Type.
     input: audio amplitude
     output_old: peak value of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: peak value
     """
-    return release_coeff * output_old + (1 - attack_coeff) * max(
-        (input - output_old), 0
-    )
+    return down_coeff * output_old + (1 - up_coeff) * max((input - output_old), 0)
 
 
 def peak_analog_level_corrected0(
     input,
     state_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the peak value of an audio input in decoupled style. Analog Level Correted Type.
     input: audio amplitude
     state_old: peak state of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: peak, peak state
     """
-    state = max(input, release_coeff * state_old)
-    output = process.smoother(state, state_old, attack_coeff)
+    state = max(input, down_coeff * state_old)
+    output = process.smoother(state, state_old, up_coeff)
 
     return output, state
 
@@ -153,21 +151,21 @@ def peak_analog_level_corrected0(
 def peak_analog_level_corrected1(
     input,
     output_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the peak value of an audio input in branch style. Analog Level Correted Type.
     input: audio amplitude
     output_old: peak value of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: peak
     """
     if input > output_old:
-        output = process.smoother(input, output_old, attack_coeff)
+        output = process.smoother(input, output_old, up_coeff)
     else:
-        output = release_coeff * output_old
+        output = down_coeff * output_old
 
     return output
 
@@ -175,22 +173,22 @@ def peak_analog_level_corrected1(
 def peak_analog_smooth0(
     input,
     state_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the peak value of an audio input in decoupled style. Analog Smooth Type.
     input: audio amplitude
     state_old: peak state of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: peak, peak state
     """
     state = max(
         input,
-        process.smoother(input, state_old, release_coeff),
+        process.smoother(input, state_old, down_coeff),
     )
-    output = process.smoother(state, state_old, attack_coeff)
+    output = process.smoother(state, state_old, up_coeff)
 
     return output, state
 
@@ -198,21 +196,21 @@ def peak_analog_smooth0(
 def peak_analog_smooth1(
     input,
     output_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the peak value of an audio input in branch style. Analog Smooth Type.
     input: audio amplitude
     output_old: peak value of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: peak
     """
     if input > output_old:
-        output = process.smoother(input, output_old, attack_coeff)
+        output = process.smoother(input, output_old, up_coeff)
     else:
-        output = process.smoother(input, output_old, release_coeff)
+        output = process.smoother(input, output_old, down_coeff)
 
     return output
 
@@ -247,21 +245,21 @@ def RMS_analog_level_corrected0(
     input,
     state_old,
     output_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the root mean square (RMS) of an audio input in decoupled style. Analog Level Corrected Type
     input: audio amplitude
     state_old: RMS state of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: RMS
     """
-    state = (input**2 + (release_coeff * state_old) ** 2) / 2
+    state = (input**2 + (down_coeff * state_old) ** 2) / 2
     state = state**0.5
 
-    output = process.smoother(state, output_old, attack_coeff)
+    output = process.smoother(state, output_old, up_coeff)
 
     return output, state
 
@@ -269,21 +267,21 @@ def RMS_analog_level_corrected0(
 def RMS_analog_level_corrected1(
     input,
     output_old,
-    attack_coeff=1,
-    release_coeff=1,
+    up_coeff=1,
+    down_coeff=1,
 ):
     """
     Computes the root mean square (RMS) of an audio input in branch style. Analog Level Corrected Type
     input: audio amplitude
     output_old: RMS value of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: RMS
     """
     if input > output_old:
-        output = process.smoother(input**2, output_old**2, attack_coeff)
+        output = process.smoother(input**2, output_old**2, up_coeff)
     else:
-        output = release_coeff * output_old**2
+        output = down_coeff * output_old**2
 
     output = output**0.5
 
@@ -294,21 +292,21 @@ def RMS_analog_smooth0(
     input,
     state_old,
     output_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the RMS value of an audio input in decoupled style. Analog Smooth Type.
     input: audio amplitude
     state_old: RMS state of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: RMS, RMS state
     """
-    state = (input**2 + (process.smoother(input, state_old, release_coeff)) ** 2) / 2
+    state = (input**2 + (process.smoother(input, state_old, down_coeff)) ** 2) / 2
     state = state**0.5
 
-    output = process.smoother(state, output_old, attack_coeff)
+    output = process.smoother(state, output_old, up_coeff)
 
     return output, state
 
@@ -316,21 +314,21 @@ def RMS_analog_smooth0(
 def RMS_analog_smooth1(
     input,
     output_old,
-    attack_coeff,
-    release_coeff,
+    up_coeff,
+    down_coeff,
 ):
     """
     Computes the RMS value of an audio input in branch style. Analog Smooth Type.
     input: audio amplitude
     output_old: RMS value of the last sample
-    attack_coeff: attack coefficient
-    release_coeff: release coefficient
+    up_coeff: up coefficient
+    down_coeff: down coefficient
     return: RMS
     """
     if input > output_old:
-        output = process.smoother(input**2, output_old**2, attack_coeff)
+        output = process.smoother(input**2, output_old**2, up_coeff)
     else:
-        output = process.smoother(input**2, output_old**2, release_coeff)
+        output = process.smoother(input**2, output_old**2, down_coeff)
 
     output = output**0.5
 
