@@ -17,6 +17,8 @@ from .feature import (
     drc_ratio_extract,
     drc_time_test_signal,
     drc_time_extract,
+    clip_test_signal,
+    clip_extract,
 )
 from .plot import fvtool, waveform, specgram, show_in_tb
 
@@ -39,6 +41,8 @@ __all__ = [
     "drc_ratio_extract",
     "drc_time_test_signal",
     "drc_time_extract",
+    "clip_test_signal",
+    "clip_extract",
     "fvtool",
     "waveform",
     "specgram",

@@ -401,14 +401,11 @@ def drc_ratio_test_signal(freq=1000, sr=96000, start=-60):
     return: signal
     """
     num = -start + 1
-    stage = np.zeros([num, sr * 5])
-    signal = np.zeros(1)
+    signal = np.zeros([num, sr * 5])
     for i in range(num):
         dB = i + start
-        stage_stage = process.generate_signal(freq, sr, dB, 5)
-        stage[i] = stage_stage[0]
-        signal = np.concatenate((signal, stage[i]), 0)
-    signal = signal[1:]
+        temp = process.generate_signal(freq, sr, dB, 5)
+        signal[i] = temp[0]
     signal = signal.reshape(1, -1)
 
     return signal
@@ -425,21 +422,60 @@ def drc_ratio_extract(ratiotest, sr, num=61):
     ratiotest = ratiotest[0]
 
     # 先选取每个阶段的最后1s，因为前面没意义，同时为peak计算节省运算量
-    ratiotest_temp = np.zeros(1)
+    ratiotest = np.empty(0)
     for i in range(num):
-        temp = ratiotest[int(i * sr * 5 + sr * 4) : int((i + 1) * sr * 5)]
-        ratiotest_temp = np.concatenate((ratiotest_temp, temp), 0)
-    ratiotest = ratiotest_temp[1:]
+        temp = ratiotest[i * sr * 5 + sr * 4 : (i + 1) * sr * 5]
+        ratiotest = np.concatenate((ratiotest, temp), 0)
     ratiotest = ratiotest.reshape(1, -1)
-
     ratiotest_peak = envelope_peak(ratiotest, sr, 20, 512)
 
+    ratiotest_peak = ratiotest_peak[0]
     for i in range(num):
         # 由于往前看了20ms，前几个值会有问题，所以删去每个阶段的前100ms
-        temp = ratiotest_peak[0, int(i * sr + sr * 0.1) : int((i + 1) * sr)]
+        temp = ratiotest_peak[int(i * sr + sr * 0.1) : (i + 1) * sr]
         temp = min(temp)
         output[i] = temp
 
     output = output.reshape(1, -1)
 
     return output
+
+
+def clip_test_signal(freq=1000, sr=96000, start=-60):
+    """
+    Generate a signal for clip test [start,0]
+    freq: test signal frequency
+    sr: sample rate of the signal (hz)
+    return: signal
+    """
+    num = -start + 1
+    signal = np.zeros([num, 4 * sr])
+    empty = np.zeros(int(sr * 3.95))
+    for i in range(num):
+        dB = i + start
+        # 20hz需要0.05s走完一个周期
+        temp = process.generate_signal(freq, sr, dB, 0.05)
+        temp = temp[0]
+        temp = np.concatenate([temp, empty], 0)
+        signal[i] = temp
+    signal = signal.reshape(1, -1)
+
+    return signal
+
+
+def clip_extract(cliptest, sr, num=61):
+    """
+    Extract the clip from the clip test signal
+    cliptest: clip test signal processed
+    sr: sample rate of the signal (hz)
+    return: clip feature
+    """
+    cliptest = cliptest[0]
+    posi = np.empty(num)
+    nega = np.empty(num)
+    for i in range(num):
+        temp = cliptest[i * 4 * sr : i * 4 * sr + int(0.1 * sr)]
+        posi[i] = np.max(temp)
+        nega[i] = np.min(temp)
+
+    return posi, nega

@@ -13,6 +13,7 @@ from .general import (
     dB2amp,
     read,
     write,
+    mix,
 )
 
 __all__ = [
@@ -29,4 +30,5 @@ __all__ = [
     "dB2amp",
     "read",
     "write",
+    "mix",
 ]
