@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 
 # todo：完善exp
@@ -69,47 +70,124 @@ def exp(
 
 def clip(
     input,
-    posi_limit=0.0,
-    nega_limit=0.0,
-    posi_one_over_ratio=0.0,
-    nega_one_over_ratio=0.0,
-    posi_knee=0.0,
-    nega_knee=0.0,
+    limit_posi=0.0,
+    limit_nega=0.0,
+    one_over_ratio_posi=0.0,
+    one_over_ratio_nega=0.0,
+    knee_posi=0.0,
+    knee_nega=0.0,
 ):
     """
-    Clip type nonlinear
-    input: audio amplitude
-    posi_limit: the value of the limit of the positive input,[0,+∞)
-    nega_limit: the value of the limit of the negative input,[0,+∞)
-    posi_one_over_ratio: 1/ratio of the positive input,[0,+∞)
-    nega_one_over_ratio: 1/ratio of the negative input,[0,+∞)
-    posi_knee: the value of the posi knee,[0,+∞)
-    nega_knee: the value of the nega knee,[0,+∞)
-    return: distorted audio amplitude
+    Apply clipping distortion to the input signal.
+
+    Args:
+        input (float): The input signal value.
+        limit_posi (float, optional): The positive limit for clipping. Defaults to 0.0.
+        limit_nega (float, optional): The negative limit for clipping. Defaults to 0.0.
+        one_over_ratio_posi (float, optional): The ratio for positive clipping. Defaults to 0.0.
+        one_over_ratio_nega (float, optional): The ratio for negative clipping. Defaults to 0.0.
+        knee_posi (float, optional): The knee width for positive clipping. Defaults to 0.0.
+        knee_nega (float, optional): The knee width for negative clipping. Defaults to 0.0.
+
+    Returns:
+        float: The output signal value after applying clipping distortion.
     """
     if input > 0:
-        if input > (posi_limit + posi_knee / 2):
-            output = posi_limit + (input - posi_limit) * posi_one_over_ratio
-        elif input > (posi_limit - posi_knee / 2) and (posi_knee != 0):
+        if input > (limit_posi + knee_posi / 2):
+            output = limit_posi + (input - limit_posi) * one_over_ratio_posi
+        elif input > (limit_posi - knee_posi / 2) and (knee_posi != 0):
             output = input + (
-                (posi_one_over_ratio - 1)
-                * (input - posi_limit + posi_knee / 2)
-                * (input - posi_limit + posi_knee / 2)
-            ) / (2 * posi_knee)
+                (one_over_ratio_posi - 1)
+                * (input - limit_posi + knee_posi / 2)
+                * (input - limit_posi + knee_posi / 2)
+            ) / (2 * knee_posi)
         else:
             output = input
     else:
         input = -input
-        if input > (nega_limit + nega_knee / 2):
-            output = nega_limit + (input - nega_limit) * nega_one_over_ratio
-        elif input > (nega_limit - nega_knee / 2) and (nega_knee != 0):
+        if input > (limit_nega + knee_nega / 2):
+            output = limit_nega + (input - limit_nega) * one_over_ratio_nega
+        elif input > (limit_nega - knee_nega / 2) and (knee_nega != 0):
             output = input + (
-                (nega_one_over_ratio - 1)
-                * (input - nega_limit + nega_knee / 2)
-                * (input - nega_limit + nega_knee / 2)
-            ) / (2 * nega_knee)
+                (one_over_ratio_nega - 1)
+                * (input - limit_nega + knee_nega / 2)
+                * (input - limit_nega + knee_nega / 2)
+            ) / (2 * knee_nega)
         else:
             output = input
         output = -output
+
+    return output
+
+
+def clip_array(
+    input,
+    limit_posi=0.0,
+    limit_nega=0.0,
+    one_over_ratio_posi=0.0,
+    one_over_ratio_nega=0.0,
+    knee_posi=0.0,
+    knee_nega=0.0,
+):
+    """
+    Apply clipping distortion to the input signal array.
+
+    Args:
+        input (ndarray): Input array to be clipped.
+        limit_posi (float, optional): Positive limit for clipping. Defaults to 0.0.
+        limit_nega (float, optional): Negative limit for clipping. Defaults to 0.0.
+        one_over_ratio_posi (float, optional): Ratio for positive clipping. Defaults to 0.0.
+        one_over_ratio_nega (float, optional): Ratio for negative clipping. Defaults to 0.0.
+        knee_posi (float, optional): Positive knee width for soft clipping. Defaults to 0.0.
+        knee_nega (float, optional): Negative knee width for soft clipping. Defaults to 0.0.
+
+    Returns:
+        ndarray: Clipped output array.
+    """
+    input_posi = np.where(input > 0, input, 0)
+    input_nega = np.where(input > 0, 0, -input)
+    output_posi = input_posi
+    output_nega = input_nega
+
+    output_posi = np.where(
+        (input_posi > (limit_posi - knee_posi / 2)) & (knee_posi != 0),
+        input_posi
+        + (
+            (one_over_ratio_posi - 1)
+            * (input_posi - limit_posi + knee_posi / 2)
+            * (input_posi - limit_posi + knee_posi / 2)
+        )
+        / (2 * knee_posi),
+        output_posi,
+    )
+    output_posi = np.where(
+        input_posi > (limit_posi + knee_posi / 2),
+        limit_posi + (input_posi - limit_posi) * one_over_ratio_posi,
+        output_posi,
+    )
+
+    output_nega = np.where(
+        (input_nega > (limit_nega - knee_nega / 2)) & (knee_nega != 0),
+        input_nega
+        + (
+            (one_over_ratio_nega - 1)
+            * (input_nega - limit_nega + knee_nega / 2)
+            * (input_nega - limit_nega + knee_nega / 2)
+        )
+        / (2 * knee_nega),
+        output_nega,
+    )
+    output_nega = np.where(
+        input_nega > (limit_nega + knee_nega / 2),
+        limit_nega + (input_nega - limit_nega) * one_over_ratio_nega,
+        output_nega,
+    )
+    output_nega = -output_nega
+
+    output = np.where(
+        input > 0,
+        output_posi,
+        output_nega,
+    )
 
     return output

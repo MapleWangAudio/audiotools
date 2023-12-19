@@ -1,7 +1,7 @@
-from .distortion import exp, clip
+from .distortion import exp, clip, clip_array
 from .drc import (
     gain_computer,
-    gain_computer_speedup,
+    gain_computer_array,
 )
 from .general import (
     generate_signal,
@@ -19,8 +19,9 @@ from .general import (
 __all__ = [
     "exp",
     "clip",
+    "clip_array",
     "gain_computer",
-    "gain_computer_speedup",
+    "gain_computer_array",
     "generate_signal",
     "time_coeff_computer",
     "smoother",

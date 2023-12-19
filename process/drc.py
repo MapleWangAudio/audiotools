@@ -29,7 +29,7 @@ def gain_computer(
     return output
 
 
-def gain_computer_speedup(
+def gain_computer_array(
     input,
     threshold=0.0,
     one_over_ratio=0.5,
