@@ -422,11 +422,11 @@ def drc_ratio_extract(ratiotest, sr, num=61):
     ratiotest = ratiotest[0]
 
     # 先选取每个阶段的最后1s，因为前面没意义，同时为peak计算节省运算量
-    ratiotest = np.empty(0)
+    ratiotest_temp = np.empty(0)
     for i in range(num):
         temp = ratiotest[i * sr * 5 + sr * 4 : (i + 1) * sr * 5]
-        ratiotest = np.concatenate((ratiotest, temp), 0)
-    ratiotest = ratiotest.reshape(1, -1)
+        ratiotest_temp = np.concatenate((ratiotest_temp, temp), 0)
+    ratiotest = ratiotest_temp.reshape(1, -1)
     ratiotest_peak = envelope_peak(ratiotest, sr, 20, 512)
 
     ratiotest_peak = ratiotest_peak[0]
