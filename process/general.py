@@ -3,7 +3,6 @@ import math
 import soundfile as sf
 
 
-# todo：生成噪音信号
 def generate_signal(
     freq,
     sr,
@@ -12,27 +11,31 @@ def generate_signal(
     mode=0,
 ):
     """
-    Generate a signal
-    freq: frequency (Hz)
-    sr: sample rate (Hz)
-    amplitude: amplitude
-    length: length (s)
-    mode: 0: sine wave, 1: square wave, 2: triangle wave
-    return: signal
+    Generate a signal with the specified frequency, sample rate, dB level, length, and mode.
+
+    Args:
+        freq (float): The frequency of the signal in Hz.
+        sr (int): The sample rate of the signal in samples per second.
+        dB (float): The dB level of the signal.
+        length (float): The length of the signal in seconds.
+        mode (int, optional): The mode of the signal generation. 0: sine wave, 1: square wave, 2: triangle wave
+
+    Returns:
+        numpy.ndarray: The generated signal as a 1D numpy array.
     """
     amplitude = dB2amp(dB)
     t = np.linspace(0, length, int(sr * length))
 
     if mode == 0:
-        output = amplitude * np.sin(2 * np.pi * freq * t)
+        result = amplitude * np.sin(2 * np.pi * freq * t)
     if mode == 1:
-        output = amplitude * np.sign(np.sin(2 * np.pi * freq * t))
+        result = amplitude * np.sign(np.sin(2 * np.pi * freq * t))
     if mode == 2:
-        output = amplitude * (2 / np.pi) * np.arctan(np.tan(np.pi * freq * t))
+        result = amplitude * (2 / np.pi) * np.arctan(np.tan(np.pi * freq * t))
 
-    output = output.reshape(1, -1)
+    result = result.reshape(1, -1)
 
-    return output
+    return result
 
 
 def time_coeff_computer(
@@ -42,55 +45,69 @@ def time_coeff_computer(
     range_high=0.9,
 ):
     """
-    Compute time coefficient for smooth filter
-    time: smooth time (ms)
-    sr: sample rate (Hz)
-    range_low: lower limit of time coefficient control range (0,1)
-    range_high: upper limit of time coefficient control range (0,1)
-    return: time coefficient
+    Compute the time coefficient for audio processing.
+
+    Args:
+        time (float): The time value in milliseconds.
+        sr (int, optional): The sample rate of the audio. Defaults to 48000.
+        range_low (float, optional): lower limit of time coefficient control range (0,1)
+        range_high (float, optional): upper limit of time coefficient control range (0,1)
+
+    Returns:
+        float: The computed time coefficient.
     """
     shape_control = math.log((1 - range_low) / (1 - range_high))
     shape_control *= -1
-    output = math.exp(shape_control / (time * 0.001 * sr))
+    result = math.exp(shape_control / (time * 0.001 * sr))
 
-    return output
+    return result
 
 
 def smoother(
-    input,
+    source,
     old,
     coeff=time_coeff_computer(1),
 ):
     """
-    Filter to smooth something
-    input: audio amplitude
-    coeff: time coefficient
-    return: smoothed input
+    Smooths the input source value using a coefficient.
+
+    Args:
+        source: The new value to be smoothed.
+        old: The previous smoothed value.
+        coeff: The coefficient used for smoothing. Defaults to the result of `time_coeff_computer(1)`.
+
+    Returns:
+        The smoothed value.
+
     """
-    return coeff * old + (1 - coeff) * input
+    return coeff * old + (1 - coeff) * source
 
 
-def mono(input):
+def mono(source):
     """
-    Convert multichannel audio to mono audio
-    input: audio amplitude
-    return: mono audio amplitude
+    Convert multichannel audio to mono audio.
+
+    Args:
+        souce: audio amplitude.
+
+    Returns:
+        Mono audio amplitude.
     """
-    channel = len(input)
+    channel = len(source)
     if channel > 1:
         input_all = 0
         for i in range(0, channel):
-            input_all = input_all + input[i, :]
+            input_all = input_all + source[i, :]
         input_mono = input_all / channel
-        output = input_mono.reshape(1, -1)
+        result = input_mono.reshape(1, -1)
     else:
-        output = input
+        result = source
 
-    return output
+    return result
 
 
 def delete(
-    input,
+    source,
     amp_threshold=0,
     sustain_threshold=2,
     all=False,
@@ -98,126 +115,143 @@ def delete(
     """
     When there are consecutive sustian_threshold elements in the tensor whose absolute value is less than amp_threshold,
     delete these elements. Note that it is deleted, not assigned a value of 0
-    input: audio data
-    amp_threshold: amplitude threshold,if the absolute value of the element is less than this value, it may be deleted
-    sustain_threshold: sustain threshold, if there are more than this number of consecutive elements whose absolute value is less than amp_threshold, they may be deleted
-    all: True: process the whole input, False: only process the beginning and the end of the input
-    return: processed input
+
+    Args:
+        source: audio data
+        amp_threshold: amplitude threshold,if the absolute value of the element is less than this value, it may be deleted
+        sustain_threshold: sustain threshold, if there are more than this number of consecutive elements whose absolute value is less than amp_threshold, they may be deleted
+        all: True: process the whole input, False: only process the beginning and the end of the input
+
+    Returns:
+        Processed source
     """
-    input_copy = input
-    input_mono = mono(input)
-    input_mono = input_mono[0, :]
+    source_copy = source
+    source_mono = mono(source)
+    source_mono = source_mono[0, :]
 
     if all == False:
         i = 0
-        while i < len(input_mono):
-            if abs(input_mono[i]) <= amp_threshold:
+        while i < len(source_mono):
+            if abs(source_mono[i]) <= amp_threshold:
                 count = 0
-                for j in range(i, len(input_mono)):
-                    if abs(input_mono[j]) <= amp_threshold:
+                for j in range(i, len(source_mono)):
+                    if abs(source_mono[j]) <= amp_threshold:
                         count += 1
                     else:
                         break
                 if count >= sustain_threshold:
-                    input_mono = np.concatenate(
-                        (input_mono[:i], input_mono[i + count :])
+                    source_mono = np.concatenate(
+                        (source_mono[:i], source_mono[i + count :])
                     )
-                    if input_copy.ndim == 1:
-                        input_copy = np.concatenate(
-                            (input_copy[:i], input_copy[i + count :])
+                    if source_copy.ndim == 1:
+                        source_copy = np.concatenate(
+                            (source_copy[:i], source_copy[i + count :])
                         )
                     else:
-                        input_copy = np.concatenate(
-                            (input_copy[:, :i], input_copy[:, i + count :]), axis=1
+                        source_copy = np.concatenate(
+                            (source_copy[:, :i], source_copy[:, i + count :]), axis=1
                         )
-            input_copy = np.flip(input_copy)
-            input_copy = input_copy.copy()
-            input_mono = np.flip(input_mono)
-            input_mono = input_mono.copy()
+            source_copy = np.flip(source_copy)
+            source_copy = source_copy.copy()
+            source_mono = np.flip(source_mono)
+            source_mono = source_mono.copy()
             break
 
         i = 0
-        while i < len(input_mono):
-            if abs(input_mono[i]) <= amp_threshold:
+        while i < len(source_mono):
+            if abs(source_mono[i]) <= amp_threshold:
                 count = 0
-                for j in range(i, len(input_mono)):
-                    if abs(input_mono[j]) <= amp_threshold:
+                for j in range(i, len(source_mono)):
+                    if abs(source_mono[j]) <= amp_threshold:
                         count += 1
                     else:
                         break
                 if count >= sustain_threshold:
-                    input_mono = np.concatenate(
-                        (input_mono[:i], input_mono[i + count :])
+                    source_mono = np.concatenate(
+                        (source_mono[:i], source_mono[i + count :])
                     )
-                    if input_copy.ndim == 1:
-                        input_copy = np.concatenate(
-                            (input_copy[:i], input_copy[i + count :])
+                    if source_copy.ndim == 1:
+                        source_copy = np.concatenate(
+                            (source_copy[:i], source_copy[i + count :])
                         )
                     else:
-                        input_copy = np.concatenate(
-                            (input_copy[:, :i], input_copy[:, i + count :]), axis=1
+                        source_copy = np.concatenate(
+                            (source_copy[:, :i], source_copy[:, i + count :]), axis=1
                         )
-            input_copy = np.flip(input_copy)
-            input_copy = input_copy.copy()
-            input_mono = np.flip(input_mono)
-            input_mono = input_mono.copy()
+            source_copy = np.flip(source_copy)
+            source_copy = source_copy.copy()
+            source_mono = np.flip(source_mono)
+            source_mono = source_mono.copy()
             break
     else:
         i = 0
-        while i < len(input_mono):
-            if abs(input_mono[i]) <= amp_threshold:
+        while i < len(source_mono):
+            if abs(source_mono[i]) <= amp_threshold:
                 count = 0
-                for j in range(i, len(input_mono)):
-                    if abs(input_mono[j]) <= amp_threshold:
+                for j in range(i, len(source_mono)):
+                    if abs(source_mono[j]) <= amp_threshold:
                         count += 1
                     else:
                         break
                 if count >= sustain_threshold:
-                    input_mono = np.concatenate(
-                        (input_mono[:i], input_mono[i + count :])
+                    source_mono = np.concatenate(
+                        (source_mono[:i], source_mono[i + count :])
                     )
-                    if input_copy.ndim == 1:
-                        input_copy = np.concatenate(
-                            (input_copy[:i], input_copy[i + count :])
+                    if source_copy.ndim == 1:
+                        source_copy = np.concatenate(
+                            (source_copy[:i], source_copy[i + count :])
                         )
                     else:
-                        input_copy = np.concatenate(
-                            (input_copy[:, :i], input_copy[:, i + count :]), axis=1
+                        source_copy = np.concatenate(
+                            (source_copy[:, :i], source_copy[:, i + count :]), axis=1
                         )
                     i -= 1
             i += 1
 
-    output = input_copy
+    result = source_copy
 
-    return output
+    return result
 
 
-def amp2dB(input, low_cut=-90):
+def amp2dB(source, low_cut=-90):
     """
-    Convert amplitude to dB
-    input: audio amplitude
-    return: audio dB [-90,+∞)
+    Convert amplitude to decibels (dB).
+
+    Args:
+        source: The source array of amplitudes.
+        low_cut: The lower cutoff value in dB. Default is -90 dB.
+
+    Returns:
+        result: The result array of amplitudes in dB.
     """
     low_cut = dB2amp(low_cut)
-    input = np.where(input >= low_cut, input, low_cut)
-    output = 20 * np.log10(input)
-    return output
+    source = np.where(source >= low_cut, source, low_cut)
+    result = 20 * np.log10(source)
+    return result
 
 
-def dB2amp(input):
+def dB2amp(source):
     """
-    Convert dB to amplitude
-    input: audio dB
-    return: audio amplitude
+    Convert a value from decibels (dB) to amplitude.
+
+    Args:
+        source (float): The value in decibels.
+
+    Returns:
+        float: The corresponding amplitude value.
     """
-    return 10 ** (input / 20)
+    return 10 ** (source / 20)
 
 
 def read(path):
     """
     Read audio file
-    path: audio file path
-    return: audio amplitude, sample rate
+
+    Args:
+        path: audio file path
+
+    Returns:
+        audio amplitude, sample rate
     """
     data, sr = sf.read(path)
     data = data.T
@@ -230,9 +264,11 @@ def read(path):
 def write(data, sr, path):
     """
     Write audio file, bit depth: int 24
-    path: audio file path
-    data: audio data
-    sr: sample rate
+
+    Args:
+        path: audio file path
+        data: audio data
+        sr: sample rate
     """
     sf.write(path, data.T, sr, "PCM_24")
 
@@ -240,14 +276,18 @@ def write(data, sr, path):
 def mix(dry, wet, mix):
     """
     Mix two audio signals
-    dry: dry signal
-    wet: wet signal
-    mix: mix ratio
-    return: mixed signal
+
+    Args:
+        dry: dry signal
+        wet: wet signal
+        mix: mix ratio
+
+    Returns:
+        mixed signal
     """
     if mix < 0.5:
-        output = dry + wet * (4 * mix**2)
+        result = dry + wet * (4 * mix**2)
     else:
-        output = dry * 4 * ((1 - mix) ** 2) + wet
+        result = dry * 4 * ((1 - mix) ** 2) + wet
 
-    return output
+    return result

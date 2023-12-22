@@ -3,71 +3,70 @@ import numpy as np
 
 def gain_computer(
     input,
-    threshold=0.0,
+    th=0.0,
     one_over_ratio=0.5,
     knee=0.0,
 ):
     """
-    Computes the gain of an audio input for compressor.
-    input: audio (dB or amplitude)
-    threshold: the value of the limit (dB or amplitude)
-    one_over_ratio: the 1/ratio of the limit
-    knee: the value of the knee, [0,+∞) (dB or amplitude)
-    return: gain value (dB or amplitude)
+    Computes the gain reduction based on the input signal and the specified parameters.
+
+    Args:
+        input (float): The input signal value.
+        th (float, optional): The threshold value. Defaults to 0.0.
+        one_over_ratio (float, optional): The inverse of the compression ratio. Defaults to 0.5.
+        knee (float, optional): The width of the knee region. Defaults to 0.0.
+
+    Returns:
+        float: The computed gain reduction value.
     """
-    if input <= (threshold - knee / 2):
+    if input <= (th - knee / 2):
         output = 0
-    elif (input <= (threshold + knee / 2)) & (knee != 0):
+    elif (input <= (th + knee / 2)) & (knee != 0):
         output = (
-            (one_over_ratio - 1)
-            * (input - threshold + knee / 2)
-            * (input - threshold + knee / 2)
+            (one_over_ratio - 1) * (input - th + knee / 2) * (input - th + knee / 2)
         ) / (2 * knee)
     else:
-        output = threshold + (input - threshold) * one_over_ratio - input
+        output = th + (input - th) * one_over_ratio - input
 
     return output
 
 
 def gain_computer_array(
     input,
-    threshold=0.0,
+    th=0.0,
     one_over_ratio=0.5,
     knee=0.0,
 ):
     """
-    Computes the gain of an audio input for compressor. 多拐点和多阈值压缩可以通过堆叠多个压缩/扩展来实现.
-    input: audio (dB or amplitude)
-    threshold: the value of the limit (dB or amplitude)
-    one_over_ratio: the 1/ratio of the limit
-    knee: the dB value of the knee, [0,+∞) (dB or amplitude)
-    multichannel: True calculates gain for each channel, False calculates gain for all channels
-    return: gain value (dB or amplitude)
-    """
+    Computes the gain computer array for dynamic range compression.
 
+    Args:
+        input (numpy.ndarray): The input array.
+        th (float, optional): The threshold value. Defaults to 0.0.
+        one_over_ratio (float, optional): The inverse of the compression ratio. Defaults to 0.5.
+        knee (float, optional): The knee width. Defaults to 0.0.
+
+    Returns:
+        numpy.ndarray: The output array after applying dynamic range compression.
+    """
     output = input
 
-    # 注意接下来3个torch.where的顺序，不能乱，否则会出错
     output = np.where(
-        input <= (threshold - knee / 2),
+        input <= (th - knee / 2),
         0,
         output,
     )
 
     output = np.where(
-        (input > (threshold - knee / 2)) & (knee != 0),
-        (
-            (one_over_ratio - 1)
-            * (input - threshold + knee / 2)
-            * (input - threshold + knee / 2)
-        )
+        (input > (th - knee / 2)) & (knee != 0),
+        ((one_over_ratio - 1) * (input - th + knee / 2) * (input - th + knee / 2))
         / (2 * knee),
         output,
     )
 
     output = np.where(
-        input > (threshold + knee / 2),
-        threshold + (input - threshold) * one_over_ratio - input,
+        input > (th + knee / 2),
+        th + (input - th) * one_over_ratio - input,
         output,
     )
 

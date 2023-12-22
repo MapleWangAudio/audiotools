@@ -9,7 +9,7 @@ from scipy import signal
 
 
 def waveform(
-    input,
+    source,
     sr=48000,
     end=False,
     name="waveform.png",
@@ -17,20 +17,22 @@ def waveform(
 ):
     """
     Plots the waveform of an audio data.
-    input: audio amplitude
-    sr: sample rate (Hz)
-    end: the last plot must be set to True, otherwise the plot will not be displayed
-    name: name of the saved file
-    save: True saves the plot as a file, False does not save the plot
+    
+    Args:
+        source: audio amplitude
+        sr: sample rate (Hz)
+        end: the last plot must be set to True, otherwise the plot will not be displayed
+        name: name of the saved file
+        save: True saves the plot as a file, False does not save the plot
     """
-    num_channels, num_frames = input.shape
+    num_channels, num_frames = source.shape
     time_axis = np.arange(0, num_frames) / sr
 
     figure, axes = plt.subplots(num_channels, 1)
     if num_channels == 1:
         axes = [axes]
     for c in range(num_channels):
-        axes[c].plot(time_axis, input[c], linewidth=1)
+        axes[c].plot(time_axis, source[c], linewidth=1)
         axes[c].grid(True)
         if num_channels > 1:
             axes[c].set_ylabel(f"Ch {c+1}" + " Amplitude")
@@ -46,7 +48,7 @@ def waveform(
 
 
 def specgram(
-    input,
+    source,
     sr=48000,
     end=False,
     name="specgram.png",
@@ -54,11 +56,13 @@ def specgram(
 ):
     """
     Plots the spectrogram of an audio data.
-    input: audio amplitude
-    sr: sample rate (Hz)
-    end: the last plot must be set to True, otherwise the plot will not be displayed
-    name: name of the saved file
-    save: True saves the plot as a file, False does not save the plot
+    
+    Args:
+        source: audio amplitude
+        sr: sample rate (Hz)
+        end: the last plot must be set to True, otherwise the plot will not be displayed
+        name: name of the saved file
+        save: True saves the plot as a file, False does not save the plot
     """
     # 检查是否有可用的 GPU 设备
     if torch.cuda.is_available():
@@ -67,11 +71,11 @@ def specgram(
     else:
         device = torch.device("cpu")
     # 将 tensor 移动到设备 device 上
-    input = torch.tensor(input, device=device)
-    specgram = torchaudio.transforms.Spectrogram(n_fft=int(sr / 100))(input)
+    source = torch.tensor(source, device=device)
+    specgram = torchaudio.transforms.Spectrogram(n_fft=int(sr / 100))(source)
     specgram_db = F.amplitude_to_DB(specgram, 20, 0, 0, 90)
 
-    num_channels, num_frames = input.shape
+    num_channels, num_frames = source.shape
     time_axis = num_frames / sr
 
     fig, axs = plt.subplots(num_channels, 1)
@@ -109,13 +113,15 @@ def fvtool(
     save=True,
 ):
     """
-    Emulates the functionality of MATLAB's fvtool function.Calculates and plots the frequency response of a filter.
-    b: numerator coefficients of the filter
-    a: denominator coefficients of the filter
-    sr: sample rate (Hz)
-    end: the last plot must be set to True, otherwise the plot will not be displayed
-    name: name of the saved file
-    save: True saves the plot as a file, False does not save the plot
+    Emulates the functionality of MATLAB's fvtool function. Calculates and plots the frequency response of a filter.
+    
+    Args:
+        b: numerator coefficients of the filter
+        a: denominator coefficients of the filter
+        sr: sample rate (Hz)
+        end: the last plot must be set to True, otherwise the plot will not be displayed
+        name: name of the saved file
+        save: True saves the plot as a file, False does not save the plot
     """
     if isinstance(a, str):
         worN = len(b)
@@ -147,8 +153,10 @@ def fvtool(
 def show_in_tb(img_path, name="Image"):
     """
     Shows an image in TensorBoard. To lanuch tb in vscode, use ctrl+shift+p, then input >python:launch tesnorboard.
-    img_path: a string list path to the image, just read png and jpg.
-    name: name of the image in tensorboard
+
+    Args:
+        img_path: a string list path to the image, just read png and jpg.
+        name: name of the image in tensorboard
     """
     writer = tb.SummaryWriter()
 

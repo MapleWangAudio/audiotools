@@ -5,9 +5,13 @@ def smooth_filter(
     coeff,
 ):
     """
-    calculate the coefficient of a smooth filter
-    coeff: time coefficient
-    return: a, b of the filter(iir)
+    Apply a smooth filter to the input signal.
+
+    Args:
+        coeff (float): The time coefficient used for filtering.
+
+    Returns:
+        tuple: A tuple containing the numerator and denominator coefficients of the filter.
     """
     b = np.zeros(3)
     a = np.zeros(3)
